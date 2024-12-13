@@ -164,3 +164,4 @@ oauth.json
 .env
 data
 *.pth
+*.jpg
