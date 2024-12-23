@@ -1,6 +1,8 @@
 from loguru import logger
 import streamlit as st
 from streamlit.runtime.uploaded_file_manager import UploadedFile
+
+from music_predictor_streamlit.service.utils import pandas_to_fastapi_json
 from music_predictor_streamlit.settings.settings import config
 import requests
 import pandas as pd
@@ -11,6 +13,8 @@ class EDA:
     def __init__(self):
         self._min_genres = config.eda_config.min_num_genres
         self._back_url = f"http://{config.music_model.backend_host}:{config.music_model.backend_port}/"
+        self._upload_url = f"{self._back_url}/api/v1/upload_dataset"
+        self._eda_url = f"{self._back_url}/api/v1/make_eda"
         self._rare_genres = None # Bad dicision 
         
     @staticmethod
@@ -31,7 +35,7 @@ class EDA:
                 'json_file': (json_file.name, json_file.getvalue(), json_file.type),
                 'zip_file': (zip_file.name, zip_file.getvalue(), zip_file.type),
             }
-            url = f"{self._back_url}/upload_dataset"
+            url = self._upload_url 
             logger.info(f"Getting bakcend {url}")
             response = requests.post(url, files=files)
             df = None
@@ -78,13 +82,8 @@ class EDA:
         return df  
     
     def _make_smaller_genres_by_backend(self, df: pd.DataFrame) -> pd.DataFrame:
-        json_file = df.to_json()
-        if json_file is None:
-            return df
-        files = {
-            'data': ("spectograms.json", json_file, 'application/json'),
-        }
-        url = f"{self._back_url}/make_eda"
+        files = pandas_to_fastapi_json(df)
+        url = self._eda_url
         logger.info(f"Getting bakcend {url}")
         response = requests.post(url, files=files)
         new_df = None
@@ -113,7 +112,7 @@ class EDA:
 
         self.plot_genre_distribution(df)
         
-    def make_eda(self):
+    def make_eda(self) -> pd.DataFrame | None:
         st.title("EDA")
 
         json_file = st.file_uploader("Загрузите JSON файл вида: "
@@ -125,5 +124,8 @@ class EDA:
         
         if df is not None:
             self.create_analytic(df)
+        # st.success("Вы удачно прошли этап EDA проходите на этап обучения!")
+
+        return df
 
     
