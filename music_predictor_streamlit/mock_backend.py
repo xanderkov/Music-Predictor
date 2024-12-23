@@ -5,12 +5,17 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 import pandas as pd
 import json
+from loguru import logger
+import argparse
+import json
 
+import yaml
 app = FastAPI()
 
 
 @app.post("/upload_dataset")
 async def upload_files(json_file: UploadFile = File(...), zip_file: UploadFile = File(...)):
+    logger.info("Get files")
     if json_file.content_type != 'application/json':
         return JSONResponse(status_code=400, content={"message": "Invalid JSON file type."})
 
@@ -24,18 +29,27 @@ async def upload_files(json_file: UploadFile = File(...), zip_file: UploadFile =
         df = pd.DataFrame(data)
     except ValueError as e:
         return JSONResponse(status_code=400, content={"message": str(e)})
+    logger.info(f"Daframe: {df.T.head()}")
+    return JSONResponse(content=df.T.to_dict())
 
-    return JSONResponse(content=df.to_dict(orient='records'))
 
+@app.post("/make_eda")
+async def make_eda(data: UploadFile = File(...)):
+    logger.info("Get files")
+    if data.content_type != 'application/json':
+        return JSONResponse(status_code=400, content={"message": "Invalid JSON file type."})
 
-import argparse
-import json
+    json_content = await data.read()
+    try:
+        data = json.loads(json_content)
+    except json.JSONDecodeError:
+        return JSONResponse(status_code=400, content={"message": "Invalid JSON format."})
 
-import yaml
-from loguru import logger
-
-from music_predictor_backend.app import app
-
+    try:
+        df = pd.DataFrame(data)
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"message": str(e)})
+    return JSONResponse(content=df.T.to_dict())
 
 def main():
     parser = argparse.ArgumentParser()

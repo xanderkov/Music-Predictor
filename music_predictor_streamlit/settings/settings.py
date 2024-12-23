@@ -9,10 +9,15 @@ class MusicModelSettings(BaseSettings):
     backend_port: int = 22448
 
 
+class EdaSettings(BaseSettings):
+    min_num_genres: int = 40
+
+
+
 class Settings(BaseSettings, case_sensitive=False):
     music_model: MusicModelSettings = MusicModelSettings()
     model_config = SettingsConfigDict(yaml_file="config/config.yml")
-
+    eda_config: EdaSettings = EdaSettings()
     @classmethod
     def settings_customise_sources(
         cls,

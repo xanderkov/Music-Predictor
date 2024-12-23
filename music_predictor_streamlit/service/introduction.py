@@ -1,6 +1,8 @@
 import streamlit as st
 import os
-def introduction():
+
+
+def make_introduction():
 
     st.subheader('О Проекте')
     

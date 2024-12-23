@@ -1,22 +1,13 @@
-import streamlit as st
 
-from music_predictor_streamlit.service.eda import make_eda
-from music_predictor_streamlit.service.introduction import introduction 
-import joblib
-from PIL import Image
-import zipfile
+from music_predictor_streamlit.app import setup_logger
+from music_predictor_streamlit.service.introduction import make_introduction
+from music_predictor_streamlit.service.service import Service
+
 
 def main():
-    condition = st.sidebar.selectbox(
-        "Выберете этап",
-        ("О проекте", "EDA", "Обучить", "Предсказать")
-    )
-    
-    if condition == "О проекте":
-        introduction()
-    elif condition == "EDA":
-       make_eda() 
-    
+    setup_logger()
+    service = Service()
+    service.start_service()
     # model = None
     # st.title("Music Genre Classification")
     # 
