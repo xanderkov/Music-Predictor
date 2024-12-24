@@ -6,7 +6,7 @@
 
 ### Бэкенда структура
 
-```angular2html
+```bash
 1. dto - модели для api
 2. repository - папка для работы с моделями
 3. routes - пути api
@@ -17,13 +17,26 @@
 
 ### Streamlit структура
 
-```angular2html
+```bash
 1. dto - модели для api
 2. services - бизнес-логика приложения. Кнопочки 
 3. settings - содержит глобальную конфигурацию 
 ```
 
+## API 
+
+
+### Бэкенда
+
+Состоит из ручек:
+
+1. .. 
+
+Всё можно посмтреть в [swagger.yaml](./docs/swagger.yaml)
+
 ## Docker
+
+Собрать и запустить
 
 ```bash
 docker compose --profile monitoring up -d --build
