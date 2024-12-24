@@ -1,18 +1,16 @@
-from loguru import logger
 import streamlit as st
+from loguru import logger
 
-from music_predictor_streamlit.service.ModelTrainer import ModelTrainer
 from music_predictor_streamlit.service.eda import EDA
 from music_predictor_streamlit.service.introduction import make_introduction
+from music_predictor_streamlit.service.ModelTrainer import ModelTrainer
 
 
 class Service:
-    def __init__(self):
-        ... 
+    def __init__(self): ...
     def start_service(self):
         condition = st.sidebar.selectbox(
-            "Выберете этап",
-            ("О проекте", "EDA", "Обучить", "Предсказать")
+            "Выберете этап", ("О проекте", "EDA", "Обучить", "Предсказать")
         )
         if condition == "О проекте":
             make_introduction()
@@ -22,4 +20,3 @@ class Service:
         elif condition == "Обучить":
             model_trainer = ModelTrainer()
             model_trainer.train()
-            

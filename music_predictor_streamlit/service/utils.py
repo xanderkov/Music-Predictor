@@ -1,14 +1,13 @@
 import pandas as pd
-from requests import Response
-from loguru import logger
 import streamlit as st
-
+from loguru import logger
+from requests import Response
 
 
 def pandas_to_fastapi_json(df: pd.DataFrame) -> dict:
     json_file = df.to_json()
     files = {
-        'data': ("spectograms.json", json_file, 'application/json'),
+        "data": ("spectograms.json", json_file, "application/json"),
     }
     return files
 

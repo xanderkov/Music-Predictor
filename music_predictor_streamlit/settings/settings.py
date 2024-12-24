@@ -1,6 +1,11 @@
-from typing import Type, Tuple
+from typing import Tuple, Type
 
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, YamlConfigSettingsSource
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
 
 
 class MusicModelSettings(BaseSettings):
@@ -13,11 +18,11 @@ class EdaSettings(BaseSettings):
     min_num_genres: int = 40
 
 
-
 class Settings(BaseSettings, case_sensitive=False):
     music_model: MusicModelSettings = MusicModelSettings()
     model_config = SettingsConfigDict(yaml_file="config/config.yml")
     eda_config: EdaSettings = EdaSettings()
+
     @classmethod
     def settings_customise_sources(
         cls,
