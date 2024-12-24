@@ -17,11 +17,14 @@ class MusicModelSettings(BaseSettings):
 class EdaSettings(BaseSettings):
     min_num_genres: int = 40
 
+class LoggerSettings(BaseSettings):
+    loki_url: str = "http://localhost:3100/loki/api/v1/push"
 
 class Settings(BaseSettings, case_sensitive=False):
     music_model: MusicModelSettings = MusicModelSettings()
     model_config = SettingsConfigDict(yaml_file="config/config.yml")
     eda_config: EdaSettings = EdaSettings()
+    logger: LoggerSettings = LoggerSettings()
 
     @classmethod
     def settings_customise_sources(

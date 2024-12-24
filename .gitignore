@@ -165,3 +165,4 @@ oauth.json
 data
 *.pth
 *.jpg
+volumes/

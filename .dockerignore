@@ -26,3 +26,6 @@
 **/values.dev.yaml
 LICENSE
 poetry.lock
+data/
+logs/
+volumes/

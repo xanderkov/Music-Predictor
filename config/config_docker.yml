@@ -1,0 +1,5 @@
+music_model:
+  backend_host: "music_predictor_backend"
+  backend_port: 22448
+logger:
+   loki_url: "http://loki:3100/loki/api/v1/push" 

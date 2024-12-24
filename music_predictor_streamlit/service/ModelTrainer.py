@@ -7,10 +7,8 @@ import traceback
 
 from loguru import logger
 from sklearn.metrics import confusion_matrix
-from tabulate import tabulate
 
 from music_predictor_streamlit.dto.dto import FitRequest, FitResponse, LabelsResponse
-from music_predictor_streamlit.mock_backend import get_labels
 from music_predictor_streamlit.service.eda import EDA
 from music_predictor_streamlit.service.utils import (
     pandas_to_fastapi_json,

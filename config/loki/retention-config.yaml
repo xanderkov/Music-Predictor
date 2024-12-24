@@ -1,0 +1,37 @@
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+  replication_factor: 1
+  path_prefix: /tmp/loki
+
+schema_config:
+  configs:
+  - from: 2020-05-15
+    store: tsdb
+    object_store: filesystem
+    schema: v13
+    index:
+      prefix: index_
+      period: 24h
+
+storage_config:
+  filesystem:
+    directory: /tmp/loki/chunks
+
+# Отличие от стандарного конфигурационного файла loki, который идет из коробки
+# заключается в строках ниже. Здесь мы указываем для менеджера по умолчанию,
+# что он может удалять старые логи, а также, что в нашем понимании "старые логи"
+
+table_manager:
+  retention_deletes_enabled: true
+  retention_period: 2160h
+
+analytics:
+  reporting_enabled: false
