@@ -1,5 +1,20 @@
 # Предсказательные модели песен
 
+## Картиночки
+
+![How to use](docs_data/record1.gif)
+
+
+## Документация
+
+1. [Бейзлайн](baseline.md)
+2. [Чекпоинты](checkpoints.md)
+3. [Инфа про датасет](dataset.md)
+4. [Техническая часть проекта](faq.md)
+5. [Для ПДФлюбителей](docs_data/faq.pdf)
+
+
+
 ## Члены команды
 
 ### Куратор:
@@ -35,3 +50,6 @@
 ## Wiki документация
 
 [ссылка](https://github.com/xanderkov/Music-Predictor/wiki)
+
+
+![Alt Text](https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif)

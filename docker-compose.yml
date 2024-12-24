@@ -6,8 +6,51 @@ services:
     container_name: music_predictor_backend
     command: poetry run python music_predictor_backend/main.py
     volumes:
-      - ./config/config.yml:/app/config/config.yml:ro
+      - ./config/config_docker.yml:/app/config/config.yml:ro
     restart: on-failure
     platform: linux/amd64
     build:
       dockerfile: Dockerfile
+    ports:
+      - "22448:22448"
+
+  music_predictor_frontend:
+    image: music_predictor_frontend
+    container_name: music_predictor_frontend
+    command: poetry run streamlit run music_predictor_streamlit/client.py
+    volumes:
+      - ./config/config_docker.yml:/app/config/config.yml:ro
+    restart: on-failure
+    platform: linux/amd64
+    build:
+      dockerfile: streamlit.Dockerfile
+    ports:
+      - "8501:8501"
+
+  loki:
+    image: grafana/loki:3.2.0
+    ports:
+      - "3100:3100"
+    container_name: music_loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./config/loki/retention-config.yaml:/etc/loki/local-config.yaml
+      - ./volumes/loki_data:/loki
+    profiles: [ monitoring ]
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: music_grafana
+    volumes:
+      - ./config/grafana/dashboards/:/var/lib/grafana/dashboards
+      - ./volumes/grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning/:/etc/grafana/provisioning/
+    environment:
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+    restart: unless-stopped
+    profiles: [ monitoring ]
+    ports:
+      - "3002:3000"
+    platform: linux/amd64
