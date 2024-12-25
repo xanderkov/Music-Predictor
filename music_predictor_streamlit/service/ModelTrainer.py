@@ -8,7 +8,8 @@ import traceback
 from loguru import logger
 from sklearn.metrics import confusion_matrix
 
-from music_predictor_streamlit.dto.dto import FitRequest, FitResponse, LabelsResponse
+from music_predictor_streamlit.dto.dto import DatasetNameRequest, DatasetNameResponse, FitRequest, FitResponse, LabelsResponse, \
+    DatasetNamesResponse
 from music_predictor_streamlit.service.eda import EDA
 from music_predictor_streamlit.service.utils import (
     pandas_to_fastapi_json,
@@ -22,6 +23,7 @@ class ModelTrainer:
         self._backend_url = f"http://{config.music_model.backend_host}:{config.music_model.backend_port}"
         self._fit_model_url = f"{self._backend_url}/api/v1/fit_model"
         self._get_labels_url = f"{self._backend_url}/api/v1/get_labels"
+        self._get_datasets_names = f"{self._backend_url}/api/v1/get_datasets_names"
 
     @staticmethod
     def create_report_metrics(
@@ -79,11 +81,10 @@ class ModelTrainer:
         plt.legend()
         st.pyplot(plt)  # type: ignore
     
-    def _get_labels(self, df: pd.DataFrame) -> list[str]:
-        files = pandas_to_fastapi_json(df)
+    def _get_labels(self, name: str) -> list[str]:
         url = self._get_labels_url
         logger.info(f"Getting bakcend {url}")
-        response = requests.post(url, files=files)
+        response = requests.post(url, json=DatasetNameRequest(name=name).model_dump())
         labels = read_json_from_backend(response, "Получены метрики!")
         res = []
         if labels is not None:
@@ -91,8 +92,7 @@ class ModelTrainer:
             res = labels.labels
         return res
 
-    def _fit_on_backend(self, fir_request: FitRequest, df: pd.DataFrame):
-        files = pandas_to_fastapi_json(df)
+    def _fit_on_backend(self, fir_request: FitRequest, name: str):
         url = self._fit_model_url
         logger.info(f"Getting backend {url}")
         response = requests.post(url, json=fir_request.model_dump())
@@ -100,7 +100,7 @@ class ModelTrainer:
         try:
             res = FitResponse.model_validate(res)
             self._draw_loss(training_loss_history=res.training_loss_history)
-            labels = self._get_labels(df)
+            labels = self._get_labels(name)
             logger.info(f"len labels: {len(labels)}")
             logger.info(f"True, pred: {res}")
             self.create_report_metrics(res.y_true, res.y_pred, labels)
@@ -108,7 +108,8 @@ class ModelTrainer:
         except Exception as e:
             logger.error(e)
             logger.error(traceback.format_exc())
-    def _create_model(self, df: pd.DataFrame):
+
+    def _create_model(self, name: str):
 
         st.subheader("Создание модели")
         epochs = st.number_input(
@@ -119,21 +120,26 @@ class ModelTrainer:
         )
         fir_request = FitRequest(epochs=epochs, learning_rate=learning_rate)
         if st.button("Создать модель"):
-            self._fit_on_backend(fir_request, df)
-
+            self._fit_on_backend(fir_request, name)
+        
+    def _get_dataset_name(self) -> str | None:
+        logger.info("Get dataset name")
+        name = None
+        res = requests.get(self._get_datasets_names)
+        if res.status_code == 200:
+            names = DatasetNamesResponse.model_validate(res.json())
+            name = st.selectbox(
+                "Выберите датасет",
+                names.names,
+            )
+    
+            st.write("Вы выбрали:", name)
+        else:
+            st.error("Не получилось получить имя датасета")
+        return name 
+    
     def train(self) -> None:
         st.title("Невероятные приключения модели. Обучение")
-
-        json_file = st.file_uploader(
-            "Загрузите JSON файл вида: "
-            "{'0': {'genres': 'soundtrack classical', 'image_path': 'path'}}",
-            type="json",
-        )
-        zip_file = st.file_uploader("Загрузите ZIP файл со спектограммами", type="zip")
-        df = None
-        if json_file is not None and zip_file is not None:
-            eda = EDA()
-            df = eda.get_pandas_from_backend(json_file, zip_file)
-
-        if df is not None:
-            self._create_model(df)
+        name = self._get_dataset_name()  
+        if name is not None:
+            self._create_model(name)
