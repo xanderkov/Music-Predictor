@@ -44,5 +44,9 @@ class PredictByModelRequest(BaseModel):
     filename: str
     model_name: str
 
+
 class PredictByModelResponse(BaseModel):
     genres: list[str]
+
+class ModelNameRequest(BaseModel):
+    name: str

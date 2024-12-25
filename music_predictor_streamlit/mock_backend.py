@@ -14,7 +14,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 import uvicorn
 
 from music_predictor_streamlit.dto.dto import DatasetNameRequest, DatasetNameResponse, FitRequest, FitResponse, \
-    LabelsResponse, DatasetNamesResponse, ModelsNamesRequest, ModelsNamesResponse, PredictByModelResponse, PredictFilenameResponse, \
+    LabelsResponse, DatasetNamesResponse, ModelNameRequest, ModelsNamesRequest, ModelsNamesResponse, PredictByModelResponse, PredictFilenameResponse, \
     PredictByModelRequest
 
 app = FastAPI()
@@ -104,12 +104,16 @@ async def get_models_names() -> ModelsNamesResponse:
 
 
 @app.post("/api/v1/save_predict_file")
-async def set_dataset_name(data: UploadFile = File(...)) -> PredictFilenameResponse:
+async def save_predict_file(data: UploadFile = File(...)) -> PredictFilenameResponse:
     return PredictFilenameResponse(name="Bugaga")    
 
 @app.post("/api/v1/predict")
-async def set_dataset_name(data: PredictByModelRequest) -> PredictByModelResponse:
+async def predict(data: PredictByModelRequest) -> PredictByModelResponse:
     return PredictByModelResponse(genres=["metall", "rock"])    
+
+@app.post("/api/v1/save_model_name")
+async def save_model_name(model: ModelNameRequest) -> DatasetNameResponse:
+    return DatasetNameResponse(message=f"Сохранена модель {model.name}")    
 
 if __name__ == "__main__":
     uvicorn.run("mock_backend:app", host="0.0.0.0", port=22448, reload=True)

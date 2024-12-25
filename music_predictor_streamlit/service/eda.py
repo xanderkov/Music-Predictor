@@ -107,9 +107,9 @@ class EDA:
     def _set_dataset_name(self, df: pd.DataFrame):
         url = self._set_dataset_url
         logger.info(f"Getting bakcend {url}")
+        title = st.text_input("Введите название датасета", "Meine_Kleine_Dataseten")
         if st.button("Сохранить датасет"):
 
-            title = st.text_input("Введите название датасета", "Meine_Kleine_Dataseten")
             dataset_name = DatasetNameRequest(name=title)
             res = send_post_request(url, dataset_name.model_dump())
             if res:

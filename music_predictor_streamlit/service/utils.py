@@ -28,6 +28,7 @@ def read_json_from_backend(response: Response, success_msg: str) -> dict | None:
 
 
 def send_post_request(url: str, request: dict) -> dict:
+    logger.info(f"Sending POST request to {url}")
     response = requests.post(url, json=request)
     if response.status_code == 200:
         logger.info("Success")
