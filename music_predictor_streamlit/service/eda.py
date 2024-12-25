@@ -5,7 +5,8 @@ import streamlit as st
 from loguru import logger
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from music_predictor_streamlit.service.utils import pandas_to_fastapi_json
+from music_predictor_streamlit.dto.dto import DatasetNameRequest
+from music_predictor_streamlit.service.utils import pandas_to_fastapi_json, send_post_request
 from music_predictor_streamlit.settings.settings import config
 
 
@@ -15,6 +16,7 @@ class EDA:
         self._back_url = f"http://{config.music_model.backend_host}:{config.music_model.backend_port}/"
         self._upload_url = f"{self._back_url}/api/v1/upload_dataset"
         self._eda_url = f"{self._back_url}/api/v1/make_eda"
+        self._set_dataset_url = f"{self._back_url}/api/v1/set_dataset_name"
         self._rare_genres = None  # Bad dicision
 
     @staticmethod
@@ -101,7 +103,18 @@ class EDA:
         if new_df is None:
             new_df = df
         return new_df
+    
+    def _set_dataset_name(self, df: pd.DataFrame):
+        url = self._set_dataset_url
+        logger.info(f"Getting bakcend {url}")
+        title = st.text_input("Введите название датасета", "Meine_Kleine_Dataseten")
+        if st.button("Сохранить датасет"):
 
+            dataset_name = DatasetNameRequest(name=title)
+            res = send_post_request(url, dataset_name.model_dump())
+            if res:
+                st.success(f"Датасет с именем {title} сохранен")
+        
     def create_analytic(self, df: pd.DataFrame):
         st.write("Загруженные данные. HEAD:")
         st.dataframe(df.head())
@@ -114,6 +127,8 @@ class EDA:
         st.subheader("Уменьшенное количество жанров")
 
         self.plot_genre_distribution(df)
+
+        self._set_dataset_name(df)
 
     def make_eda(self) -> pd.DataFrame | None:
         st.title("EDA")

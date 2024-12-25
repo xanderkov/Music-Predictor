@@ -30,7 +30,16 @@
 
 Состоит из ручек:
 
-1. .. 
+1. /api/v1/upload_dataset - загрузка датасета на сервер
+2. /api/v1/make_eda - делает обработку датасета
+3. /api/v1/fit_model - обучает модель. Дает результаты обучения
+4. /api/v1/get_labels - получить классы датасета
+5. /api/v1/set_dataset_name - сохранить датасет с именем
+6. /api/v1/get_datasets_name - получить имена датасетов
+7. /api/v1/models_names - получить имена моделей на сервере
+8. /api/v1/save_predict_file - сохранить модель с имененм
+9. /api/v1/predict - предсказать имя модели
+10. /api/v1/save_model_name - сохранить модель по имени 
 
 Всё можно посмтреть в [swagger.yaml](./docs/swagger.yaml)
 
@@ -48,6 +57,12 @@ docker compose --profile monitoring up -d --build
 ```bash
 docker compose up -d --build
 ```
+
+## Мониторинг 
+
+Сервис отправляет логи в Loki.
+
+Для просмотра логово, используется сервис Графана.
 
 ## Нативно
 

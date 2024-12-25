@@ -14,3 +14,39 @@ class FitResponse(BaseModel):
 
 class LabelsResponse(BaseModel):
     labels: list[str]
+
+
+class DatasetNameRequest(BaseModel):
+    name: str
+
+
+class DatasetNameResponse(BaseModel):
+    message: str
+
+    
+class DatasetNamesResponse(BaseModel):
+    names: list[str]
+
+
+class ModelsNamesRequest(BaseModel):
+    names: list[str]
+
+
+class ModelsNamesResponse(BaseModel):
+    names: list[str]
+
+
+class PredictFilenameResponse(BaseModel):
+    name: str
+
+
+class PredictByModelRequest(BaseModel):
+    filename: str
+    model_name: str
+
+
+class PredictByModelResponse(BaseModel):
+    genres: list[str]
+
+class ModelNameRequest(BaseModel):
+    name: str
