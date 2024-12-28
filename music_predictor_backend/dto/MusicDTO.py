@@ -6,7 +6,7 @@ class PredictRequest(BaseModel):
 
 
 class PredictResponse(BaseModel):
-    genres: list[str]    
+    genres: list[str]
 
 
 class ListPredictResponses(BaseModel):

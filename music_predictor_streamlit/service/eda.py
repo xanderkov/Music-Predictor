@@ -6,7 +6,10 @@ from loguru import logger
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from music_predictor_streamlit.dto.dto import DatasetNameRequest
-from music_predictor_streamlit.service.utils import pandas_to_fastapi_json, send_post_request
+from music_predictor_streamlit.service.utils import (
+    pandas_to_fastapi_json,
+    send_post_request,
+)
 from music_predictor_streamlit.settings.settings import config
 
 
@@ -103,7 +106,7 @@ class EDA:
         if new_df is None:
             new_df = df
         return new_df
-    
+
     def _set_dataset_name(self, df: pd.DataFrame):
         url = self._set_dataset_url
         logger.info(f"Getting bakcend {url}")
@@ -114,7 +117,7 @@ class EDA:
             res = send_post_request(url, dataset_name.model_dump())
             if res:
                 st.success(f"Датасет с именем {title} сохранен")
-        
+
     def create_analytic(self, df: pd.DataFrame):
         st.write("Загруженные данные. HEAD:")
         st.dataframe(df.head())

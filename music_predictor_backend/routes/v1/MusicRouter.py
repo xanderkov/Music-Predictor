@@ -13,5 +13,7 @@ tempRouter = APIRouter(
 
 
 @tempRouter.post("/predict_by_spectorgrams")
-async def predict_by_spectorgrams(files: list[UploadFile] = File(...), service: MusicService = Depends()) -> ListPredictResponses:
+async def predict_by_spectorgrams(
+    files: list[UploadFile] = File(...), service: MusicService = Depends()
+) -> ListPredictResponses:
     return service.predict_by_spectorgrams(files)

@@ -7,8 +7,14 @@ import requests
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from music_predictor_backend.settings.settings import config
-from music_predictor_streamlit.dto.dto import DatasetNamesResponse, ModelsNamesRequest, ModelsNamesResponse, PredictByModelRequest, \
-    PredictFilenameResponse, PredictByModelResponse
+from music_predictor_streamlit.dto.dto import (
+    DatasetNamesResponse,
+    ModelsNamesRequest,
+    ModelsNamesResponse,
+    PredictByModelRequest,
+    PredictFilenameResponse,
+    PredictByModelResponse,
+)
 
 
 class ModelPredictor:
@@ -33,8 +39,14 @@ class ModelPredictor:
         return res
 
     def _choose_file(self) -> PredictFilenameResponse | None:
-        file = st.file_uploader("Загрузите картинку спектограммы ",# / mp3 / текст песни
-                                type=["png", "jpg", "jpeg",]) #  "mp3", "txt"
+        file = st.file_uploader(
+            "Загрузите картинку спектограммы ",  # / mp3 / текст песни
+            type=[
+                "png",
+                "jpg",
+                "jpeg",
+            ],
+        )  #  "mp3", "txt"
         response = None
         if file is not None:
             response = self._send_file(file)
@@ -66,7 +78,11 @@ class ModelPredictor:
             res = PredictByModelResponse.model_validate(res.json())
             st.subheader("Полученные Жанры")
 
-            df = pd.DataFrame(data=res.genres, columns=["Жарны"], index=[i for i in range(len(res.genres))])
+            df = pd.DataFrame(
+                data=res.genres,
+                columns=["Жарны"],
+                index=[i for i in range(len(res.genres))],
+            )
             st.table(df)
 
     def predict(self):

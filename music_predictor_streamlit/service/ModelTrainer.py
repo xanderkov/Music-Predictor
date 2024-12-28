@@ -8,13 +8,20 @@ import traceback
 from loguru import logger
 from sklearn.metrics import confusion_matrix
 
-from music_predictor_streamlit.dto.dto import DatasetNameRequest, DatasetNameResponse, FitRequest, FitResponse, \
-    LabelsResponse, \
-    DatasetNamesResponse, ModelNameRequest
+from music_predictor_streamlit.dto.dto import (
+    DatasetNameRequest,
+    DatasetNameResponse,
+    FitRequest,
+    FitResponse,
+    LabelsResponse,
+    DatasetNamesResponse,
+    ModelNameRequest,
+)
 from music_predictor_streamlit.service.eda import EDA
 from music_predictor_streamlit.service.utils import (
     pandas_to_fastapi_json,
-    read_json_from_backend, send_post_request,
+    read_json_from_backend,
+    send_post_request,
 )
 from music_predictor_streamlit.settings.settings import config
 
@@ -70,7 +77,11 @@ class ModelTrainer:
         )
 
         headers = ["Label", "Precision", "Recall", "F1-Score", "Balanced accuracy"]
-        table = pd.DataFrame(data=metrics_table, index=[i for i in range(len(metrics_table))], columns=headers)
+        table = pd.DataFrame(
+            data=metrics_table,
+            index=[i for i in range(len(metrics_table))],
+            columns=headers,
+        )
         st.table(table)
 
     @staticmethod
@@ -82,7 +93,7 @@ class ModelTrainer:
         plt.title("Training Progress")
         plt.legend()
         st.pyplot(plt)  # type: ignore
-    
+
     def _get_labels(self, name: str) -> list[str]:
         url = self._get_labels_url
         logger.info(f"Getting bakcend {url}")
@@ -110,7 +121,7 @@ class ModelTrainer:
         except Exception as e:
             logger.error(e)
             logger.error(traceback.format_exc())
-    
+
     def _set_model_name(self, title: str):
         url = self._save_model_name_url
         logger.info(f"Save model {url}")
@@ -119,7 +130,7 @@ class ModelTrainer:
         res = send_post_request(url, model_name.model_dump())
         logger.info(f"{res}")
         st.success(f"Модель с именем {title} сохранена")
-    
+
     def _create_model(self, name: str):
 
         st.subheader("Создание модели")
@@ -130,12 +141,14 @@ class ModelTrainer:
             "Learning rate", min_value=0.0001, max_value=0.99, value=0.01
         )
         fir_request = FitRequest(epochs=epochs, learning_rate=learning_rate)
-        title = st.text_input("Введите название модели. Для сохранения", "Meine_Kleine_Modeleen")
+        title = st.text_input(
+            "Введите название модели. Для сохранения", "Meine_Kleine_Modeleen"
+        )
 
         if st.button("Создать модель"):
             self._fit_on_backend(fir_request, name)
             self._set_model_name(title)
-        
+
     def _get_dataset_name(self) -> str | None:
         logger.info("Get dataset name")
         name = None
@@ -146,14 +159,14 @@ class ModelTrainer:
                 "Выберите датасет",
                 names.names,
             )
-    
+
             st.write("Вы выбрали:", name)
         else:
             st.error("Не получилось получить имя датасета")
-        return name 
-    
+        return name
+
     def train(self) -> None:
         st.title("Невероятные приключения модели. Обучение")
-        name = self._get_dataset_name()  
+        name = self._get_dataset_name()
         if name is not None:
             self._create_model(name)
