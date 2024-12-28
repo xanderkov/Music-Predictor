@@ -2,7 +2,7 @@
 
 ## Картиночки
 
-![How to use](docs_data/record2.gif)
+![How to use](docs_data/record1.gif)
 
 
 ## Документация

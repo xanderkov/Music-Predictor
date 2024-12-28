@@ -8,7 +8,7 @@ from music_predictor_backend.services.MusicService import MusicService
 tempRouter = APIRouter(
     tags=["Music"],
     responses={404: {"description": "Not found"}},
-    prefix="/api/v1",
+    prefix="/api/v1/model",
 )
 
 
