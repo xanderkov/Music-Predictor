@@ -2,3 +2,4 @@ datasets
 soundfile
 librosa
 ytmusicapi
+youtube-dl
