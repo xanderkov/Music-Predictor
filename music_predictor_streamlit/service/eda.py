@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 import streamlit as st
 from loguru import logger
+import pickle
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from music_predictor_streamlit.dto.dto import DatasetNameRequest
@@ -37,20 +38,21 @@ class EDA:
     def get_pandas_from_backend(
         self, json_file: UploadedFile, zip_file: UploadedFile
     ) -> pd.DataFrame | None:
+        # with st.spinner('Обрабатываем датасет...'):
         logger.info("Files getted")
         files = {
             "json_file": (json_file.name, json_file.getvalue(), json_file.type),
             "zip_file": (zip_file.name, zip_file.getvalue(), zip_file.type),
         }
         url = self._upload_url
-        logger.info(f"Getting bakcend {url}")
+        logger.info(f"Getting backend {url}")
         response = requests.post(url, files=files)
         df = None
         if response.status_code == 200:
             logger.info("Success")
             st.success("Файлы загружены на сервер!")
             # st.json(response.json())
-            df = self.transform_json_response_to_dataframe(response.json())
+            df = self.transform_json_response_to_dataframe(pickle.loads(response.content))
         else:
             error = f"Error: {response.json().get('message', 'Unknown error occurred')}"
             st.error(error)
@@ -109,14 +111,20 @@ class EDA:
 
     def _set_dataset_name(self, df: pd.DataFrame):
         url = self._set_dataset_url
-        logger.info(f"Getting bakcend {url}")
-        title = st.text_input("Введите название датасета", "Meine_Kleine_Dataseten")
+        logger.info(f"Getting backend {url}")
+        title = st.text_input("Введите название датасета", "My dataset")
         if st.button("Сохранить датасет"):
+            response = requests.post(
+                url,
+                data={"name": title},
+                files={"pickled_file": ("data.pkl", pickle.dumps(df), "application/octet-stream")},
+            )
 
-            dataset_name = DatasetNameRequest(name=title)
-            res = send_post_request(url, dataset_name.model_dump())
-            if res:
+            if response.status_code == 200:
                 st.success(f"Датасет с именем {title} сохранен")
+            else:
+                error = f"Error: {response.json().get('message', 'Unknown error occurred')}"
+                st.error(error)
 
     def create_analytic(self, df: pd.DataFrame):
         st.write("Загруженные данные. HEAD:")
@@ -141,7 +149,7 @@ class EDA:
             "{'0': {'genres': 'soundtrack classical', 'image_path': 'path'}}",
             type="json",
         )
-        zip_file = st.file_uploader("Загрузите ZIP файл со спектограммами", type="zip")
+        zip_file = st.file_uploader("Загрузите ZIP файл со спектограммами", type="zip", )
         df = None
         if json_file is not None and zip_file is not None:
             df = self.get_pandas_from_backend(json_file, zip_file)

@@ -29,7 +29,7 @@ class ModelPredictor:
             "data": (file.name, file.getvalue(), file.type),
         }
         url = self._send_predict_file_url
-        logger.info(f"Getting bakcend {url}")
+        logger.info(f"Getting backend {url}")
         response = requests.post(url, files=files)
         res = None
         if response.status_code != 200:

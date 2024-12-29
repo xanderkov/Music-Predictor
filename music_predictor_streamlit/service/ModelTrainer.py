@@ -105,10 +105,10 @@ class ModelTrainer:
             res = labels.labels
         return res
 
-    def _fit_on_backend(self, fir_request: FitRequest, name: str):
+    def _fit_on_backend(self, fit_request: FitRequest, name: str):
         url = self._fit_model_url
         logger.info(f"Getting backend {url}")
-        response = requests.post(url, json=fir_request.model_dump())
+        response = requests.post(url, json=fit_request.model_dump())
         res = read_json_from_backend(response, "Модель обучена!")
         try:
             res = FitResponse.model_validate(res)

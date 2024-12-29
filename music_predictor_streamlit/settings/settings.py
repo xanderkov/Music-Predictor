@@ -15,7 +15,7 @@ class MusicModelSettings(BaseSettings):
 
 
 class EdaSettings(BaseSettings):
-    min_num_genres: int = 40
+    min_num_genres: int = 2
 
 
 class LoggerSettings(BaseSettings):
