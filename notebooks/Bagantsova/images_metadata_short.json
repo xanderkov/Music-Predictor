@@ -1,0 +1,66 @@
+{
+    "0": {
+        "genres": "soundtrack classical",
+        "image_path": "image_0.png"
+    },
+    "1": {
+        "genres": "hiphop electronic latin",
+        "image_path": "image_1.png"
+    },
+    "2": {
+        "genres": "poprock instrumentalrock rocknroll",
+        "image_path": "image_2.png"
+    },
+    "3": {
+        "genres": "soundtrack ambient classical",
+        "image_path": "image_3.png"
+    },
+    "4": {
+        "genres": "soundtrack ambient classical",
+        "image_path": "image_4.png"
+    },
+    "5": {
+        "genres": "soundtrack ambient classical",
+        "image_path": "image_5.png"
+    },
+    "6": {
+        "genres": "metal rock alternative",
+        "image_path": "image_6.png"
+    },
+    "7": {
+        "genres": "easylistening soundtrack classical newage",
+        "image_path": "image_7.png"
+    },
+    "8": {
+        "genres": "classical",
+        "image_path": "image_8.png"
+    },
+    "9": {
+        "genres": "classical",
+        "image_path": "image_9.png"
+    },
+    "10": {
+        "genres": "classical",
+        "image_path": "image_10.png"
+    },
+    "11": {
+        "genres": "soundtrack classical",
+        "image_path": "image_11.png"
+    },
+    "12": {
+        "genres": "rock indie",
+        "image_path": "image_12.png"
+    },
+    "13": {
+        "genres": "rock indie",
+        "image_path": "image_13.png"
+    },
+    "14": {
+        "genres": "electronic edm rock alternative",
+        "image_path": "image_14.png"
+    },
+    "15": {
+        "genres": "progressive rock alternative",
+        "image_path": "image_15.png"
+    }
+}

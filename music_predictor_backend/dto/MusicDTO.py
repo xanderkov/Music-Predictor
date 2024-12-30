@@ -19,12 +19,6 @@ class LabelsResponse(BaseModel):
 
 class DatasetNameRequest(BaseModel):
     name: str
-    pickled_file: bytes
-
-
-class FileUploadRequest(BaseModel):
-    json_file: UploadFile
-    zip_file: UploadFile
 
 
 class DatasetNameResponse(BaseModel):

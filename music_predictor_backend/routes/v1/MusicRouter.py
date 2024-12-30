@@ -29,7 +29,6 @@ from music_predictor_backend.dto.MusicDTO import (
     DatasetNamesResponse,
     ModelNameRequest,
     ModelsNamesRequest,
-    FileUploadRequest,
     ModelsNamesResponse,
     PredictByModelResponse,
     PredictFilenameResponse,
@@ -66,16 +65,17 @@ async def read_json(json_file: UploadFile = File(...)) -> pd.DataFrame | JSONRes
 
 @tempRouter.post("/upload_dataset")
 async def convert_files_to_dataframe(
-    metadata: FileUploadRequest
+        json_file: UploadFile = File(...),
+        zip_file: UploadFile = File(...),
 ):
     logger.info("Get files")
 
-    if metadata.json_file.content_type != "application/json":
+    if json_file.content_type != "application/json":
         raise HTTPException(
             status_code=400, detail={"message": "Invalid JSON file type."}
         )
-    json_content = json.loads(await metadata.json_file.read())
-    zip_content = zipfile.ZipFile(io.BytesIO(await metadata.zip_file.read()))
+    json_content = json.loads(await json_file.read())
+    zip_content = zipfile.ZipFile(io.BytesIO(await zip_file.read()))
 
     data = []
 
@@ -150,22 +150,29 @@ async def get_labels(name: DatasetNameRequest) -> LabelsResponse:
 
 
 @tempRouter.post("/set_dataset_name")
-async def set_dataset_name(dataset_request: DatasetNameRequest) -> DatasetNameResponse:
+async def set_dataset_name(
+    name: str = Form(...),
+    pickled_dataset: UploadFile = File(...)
+) -> DatasetNameResponse:
     try:
-        data = pickle.loads(dataset_request.pickled_file)
-    except pickle.UnpicklingError:
+        dataset_content = await pickled_dataset.read()
+        data = pickle.loads(dataset_content)
+        logger.info(f"Dataset content received: {data}")
+    except (pickle.UnpicklingError, EOFError) as e:
         raise HTTPException(
-            status_code=400, detail="Invalid pickled file")
-
-    file_path = f"{DATA_PATH}/datasets/{dataset_request.name}.pkl"
+            status_code=400,
+            detail=f"Invalid pickled file: {e}"
+        )
+    logger.info("Dataset received")
+    file_path = f"{DATA_PATH}/datasets/{name}.pkl"
 
     if os.path.exists(file_path):
         raise HTTPException(
-            status_code=400, detail=f"File '{file_path}' already exists.")
+            status_code=400, detail=f"Dataset '{name}' already exists.")
     else:
         with open(file_path, 'wb') as dump_file:
             pickle.dump(data, dump_file)
-        return DatasetNameResponse(message=f"Сохранен датасет {dataset_request.name}")
+        return DatasetNameResponse(message=f"Сохранен датасет {name}")
 
 
 @tempRouter.get("/get_datasets_names")

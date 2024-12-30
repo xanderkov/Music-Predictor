@@ -1,5 +1,20 @@
 components:
   schemas:
+    Body_convert_files_to_dataframe_api_v1_upload_dataset_post:
+      properties:
+        json_file:
+          format: binary
+          title: Json File
+          type: string
+        zip_file:
+          format: binary
+          title: Zip File
+          type: string
+      required:
+      - json_file
+      - zip_file
+      title: Body_convert_files_to_dataframe_api_v1_upload_dataset_post
+      type: object
     Body_make_eda_api_v1_make_eda_post:
       properties:
         data:
@@ -20,18 +35,27 @@ components:
       - data
       title: Body_save_predict_file_api_v1_save_predict_file_post
       type: object
+    Body_set_dataset_name_api_v1_set_dataset_name_post:
+      properties:
+        name:
+          title: Name
+          type: string
+        pickled_dataset:
+          format: binary
+          title: Pickled Dataset
+          type: string
+      required:
+      - name
+      - pickled_dataset
+      title: Body_set_dataset_name_api_v1_set_dataset_name_post
+      type: object
     DatasetNameRequest:
       properties:
         name:
           title: Name
           type: string
-        pickled_file:
-          format: binary
-          title: Pickled File
-          type: string
       required:
       - name
-      - pickled_file
       title: DatasetNameRequest
       type: object
     DatasetNameResponse:
@@ -53,21 +77,6 @@ components:
       required:
       - names
       title: DatasetNamesResponse
-      type: object
-    FileUploadRequest:
-      properties:
-        json_file:
-          format: binary
-          title: Json File
-          type: string
-        zip_file:
-          format: binary
-          title: Zip File
-          type: string
-      required:
-      - json_file
-      - zip_file
-      title: FileUploadRequest
       type: object
     FitRequest:
       properties:
@@ -405,14 +414,41 @@ paths:
       summary: Save Predict File
       tags:
       - Music
+  /api/v1/set_dataset_name:
+    post:
+      operationId: set_dataset_name_api_v1_set_dataset_name_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_set_dataset_name_api_v1_set_dataset_name_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetNameResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Set Dataset Name
+      tags:
+      - Music
   /api/v1/upload_dataset:
     post:
       operationId: convert_files_to_dataframe_api_v1_upload_dataset_post
       requestBody:
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/FileUploadRequest'
+              $ref: '#/components/schemas/Body_convert_files_to_dataframe_api_v1_upload_dataset_post'
         required: true
       responses:
         '200':
