@@ -5,12 +5,14 @@ from fastapi import UploadFile, Request
 class FitRequest(BaseModel):
     epochs: int
     learning_rate: float
+    dataset_name: str
 
 
 class FitResponse(BaseModel):
-    y_true: list[int]
-    y_pred: list[int]
+    y_true: list[list[int]]
+    y_pred: list[list[int]]
     training_loss_history: list[float]
+    model_number_id: str
 
 
 class LabelsResponse(BaseModel):
@@ -41,14 +43,10 @@ class PredictFilenameResponse(BaseModel):
     name: str
 
 
-class PredictByModelRequest(BaseModel):
-    filename: str
-    model_name: str
-
-
 class PredictByModelResponse(BaseModel):
     genres: list[str]
 
 
 class ModelNameRequest(BaseModel):
     name: str
+    id: str

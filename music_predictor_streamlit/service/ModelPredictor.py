@@ -7,11 +7,10 @@ import requests
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from music_predictor_backend.settings.settings import config
-from music_predictor_streamlit.dto.dto import (
+from music_predictor_backend.dto.MusicDTO import (
     DatasetNamesResponse,
     ModelsNamesRequest,
     ModelsNamesResponse,
-    PredictByModelRequest,
     PredictFilenameResponse,
     PredictByModelResponse,
 )
@@ -47,10 +46,7 @@ class ModelPredictor:
                 "jpeg",
             ],
         )  #  "mp3", "txt"
-        response = None
-        if file is not None:
-            response = self._send_file(file)
-        return response
+        return file
 
     def _choose_model(self) -> str | None:
         logger.info(f"Getting model")
@@ -68,11 +64,14 @@ class ModelPredictor:
             st.error("Не получилось получить имя модели")
         return name
 
-    def _predict_model(self, name: str, filename: PredictFilenameResponse):
+    def _predict_model(self, name: str, file: UploadedFile):
         logger.info(f"Predicting {name}")
-        model_body = PredictByModelRequest(filename=filename.name, model_name=name)
-        res = requests.post(self._predict_genre_url, json=model_body.model_dump())
+        model_body = {'model_name': name}
+        res = requests.post(self._predict_genre_url, files ={
+            "data": (file.name, file.getvalue(), file.type),
+        }, data=model_body)
         if res.status_code != 200:
+            print(res.status_code)
             st.error("Не удалось получить предсказание")
         else:
             res = PredictByModelResponse.model_validate(res.json())
@@ -80,7 +79,7 @@ class ModelPredictor:
 
             df = pd.DataFrame(
                 data=res.genres,
-                columns=["Жарны"],
+                columns=["Жанры"],
                 index=[i for i in range(len(res.genres))],
             )
             st.table(df)

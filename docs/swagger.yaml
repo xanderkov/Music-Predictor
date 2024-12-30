@@ -15,25 +15,19 @@ components:
       - zip_file
       title: Body_convert_files_to_dataframe_api_v1_upload_dataset_post
       type: object
-    Body_make_eda_api_v1_make_eda_post:
+    Body_predict_api_v1_predict_post:
       properties:
         data:
           format: binary
           title: Data
           type: string
-      required:
-      - data
-      title: Body_make_eda_api_v1_make_eda_post
-      type: object
-    Body_save_predict_file_api_v1_save_predict_file_post:
-      properties:
-        data:
-          format: binary
-          title: Data
+        model_name:
+          title: Model Name
           type: string
       required:
+      - model_name
       - data
-      title: Body_save_predict_file_api_v1_save_predict_file_post
+      title: Body_predict_api_v1_predict_post
       type: object
     Body_set_dataset_name_api_v1_set_dataset_name_post:
       properties:
@@ -80,6 +74,9 @@ components:
       type: object
     FitRequest:
       properties:
+        dataset_name:
+          title: Dataset Name
+          type: string
         epochs:
           title: Epochs
           type: integer
@@ -89,10 +86,14 @@ components:
       required:
       - epochs
       - learning_rate
+      - dataset_name
       title: FitRequest
       type: object
     FitResponse:
       properties:
+        model_number_id:
+          title: Model Number Id
+          type: string
         training_loss_history:
           items:
             type: number
@@ -100,18 +101,23 @@ components:
           type: array
         y_pred:
           items:
-            type: integer
+            items:
+              type: integer
+            type: array
           title: Y Pred
           type: array
         y_true:
           items:
-            type: integer
+            items:
+              type: integer
+            type: array
           title: Y True
           type: array
       required:
       - y_true
       - y_pred
       - training_loss_history
+      - model_number_id
       title: FitResponse
       type: object
     HTTPValidationError:
@@ -136,11 +142,15 @@ components:
       type: object
     ModelNameRequest:
       properties:
+        id:
+          title: Id
+          type: string
         name:
           title: Name
           type: string
       required:
       - name
+      - id
       title: ModelNameRequest
       type: object
     ModelsNamesResponse:
@@ -154,19 +164,6 @@ components:
       - names
       title: ModelsNamesResponse
       type: object
-    PredictByModelRequest:
-      properties:
-        filename:
-          title: Filename
-          type: string
-        model_name:
-          title: Model Name
-          type: string
-      required:
-      - filename
-      - model_name
-      title: PredictByModelRequest
-      type: object
     PredictByModelResponse:
       properties:
         genres:
@@ -177,15 +174,6 @@ components:
       required:
       - genres
       title: PredictByModelResponse
-      type: object
-    PredictFilenameResponse:
-      properties:
-        name:
-          title: Name
-          type: string
-      required:
-      - name
-      title: PredictFilenameResponse
       type: object
     ValidationError:
       properties:
@@ -292,32 +280,6 @@ paths:
       summary: Get Labels
       tags:
       - Music
-  /api/v1/make_eda:
-    post:
-      operationId: make_eda_api_v1_make_eda_post
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Body_make_eda_api_v1_make_eda_post'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema: {}
-          description: Successful Response
-        '404':
-          description: Not found
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Make Eda
-      tags:
-      - Music
   /api/v1/models_names:
     get:
       operationId: get_models_names_api_v1_models_names_get
@@ -338,9 +300,9 @@ paths:
       operationId: predict_api_v1_predict_post
       requestBody:
         content:
-          application/json:
+          multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PredictByModelRequest'
+              $ref: '#/components/schemas/Body_predict_api_v1_predict_post'
         required: true
       responses:
         '200':
@@ -385,33 +347,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Save Model Name
-      tags:
-      - Music
-  /api/v1/save_predict_file:
-    post:
-      operationId: save_predict_file_api_v1_save_predict_file_post
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Body_save_predict_file_api_v1_save_predict_file_post'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PredictFilenameResponse'
-          description: Successful Response
-        '404':
-          description: Not found
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Save Predict File
       tags:
       - Music
   /api/v1/set_dataset_name:
