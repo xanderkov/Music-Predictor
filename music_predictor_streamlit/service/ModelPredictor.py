@@ -71,7 +71,7 @@ class ModelPredictor:
             "data": (file.name, file.getvalue(), file.type),
         }, data=model_body)
         if res.status_code != 200:
-            print(res.status_code)
+            logger.info(res.status_code)
             st.error("Не удалось получить предсказание")
         else:
             res = PredictByModelResponse.model_validate(res.json())

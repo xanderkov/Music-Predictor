@@ -73,11 +73,11 @@ async def save_model_with_retry(model, max_retries: int =5):
         try:
             id_number = await generate_id_number()
             model_path = await save_model(model, id_number)
-            print(f"Model saved successfully with ID: {id_number}")
+            logger.info(f"Model saved successfully with ID: {id_number}")
             return id_number, model_path
         except FileExistsError:
             retries += 1
-            print(f"Duplicate file detected. Retrying... ({retries}/{max_retries})")
+            logger.info(f"Duplicate file detected. Retrying... ({retries}/{max_retries})")
 
     raise RuntimeError("Failed to save model after multiple attempts due to duplicates.")
 
@@ -115,8 +115,8 @@ async def convert_files_to_dataframe(
                 image = Image.open(img_file)
                 image = image.convert("L")
                 img_array = np.array(image)
-                print(f"Image mode: {image.mode}")
-                print(f"Image shape: {img_array.shape}")
+                logger.info(f"Image mode: {image.mode}")
+                logger.info(f"Image shape: {img_array.shape}")
         except json.JSONDecodeError:
             raise HTTPException(
                 status_code=400, detail={"message": "Picture cannot be processed."}

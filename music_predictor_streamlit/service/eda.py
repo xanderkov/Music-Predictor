@@ -116,12 +116,8 @@ class EDA:
 
         if st.button("Сохранить датасет"):
             st.session_state.button_clicked = True
-
-        print("SAVE")
-
         if st.session_state.button_clicked:
             try:
-                print("SAVE")
                 response = requests.post(
                     url,
                     data={"name": title},
@@ -129,7 +125,6 @@ class EDA:
                     "pickled_dataset": (f"{title}.pkl", pickle.dumps(df), "application/octet-stream"),
                     }
                 )
-                print(response)
                 if response.status_code == 200:
                     st.success(f"Датасет с именем {title} сохранен")
                 else:

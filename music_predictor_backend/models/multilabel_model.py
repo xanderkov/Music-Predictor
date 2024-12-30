@@ -81,7 +81,7 @@ class MultilabelExperiment:
         metrics_table.append(["Balanced average", avg_precision, avg_recall, avg_f1, avg_accuracy])
 
         headers = ["Label", "Precision", "Recall", "F1-Score", "Balanced accuracy"]
-        print(tabulate(metrics_table, headers=headers, floatfmt=".4f", tablefmt="grid"))
+        logger.info(tabulate(metrics_table, headers=headers, floatfmt=".4f", tablefmt="grid"))
 
 
 class MultilabelClassifier2D(nn.Module):

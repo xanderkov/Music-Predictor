@@ -47,7 +47,6 @@ class MusicService:
         y_train = list(y_train)
         for i in range(len(train_feats) - 1, -1, -1):
             if train_feats[i].shape[0] != 1000:
-                print(i)
                 train_feats.pop(i)
                 y_train.pop(i)
                 train_feats.pop(i)
@@ -55,7 +54,6 @@ class MusicService:
         y_test_encoder = list(y_test_encoder)
         for i in range(len(test_feats) - 1, -1, -1):
             if test_feats[i].shape[0] != 1000:
-                print(i)
                 test_feats.pop(i)
                 y_test_encoder.pop(i)
                 test_feats.pop(i)
