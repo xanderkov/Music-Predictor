@@ -144,7 +144,9 @@ class ModelTrainer:
         learning_rate = st.number_input(
             "Learning rate", min_value=0.0001, max_value=0.99, value=0.01
         )
-        fit_request = FitRequest(epochs=epochs, learning_rate=learning_rate, dataset_name=name)
+        fit_request = FitRequest(
+            epochs=epochs, learning_rate=learning_rate, dataset_name=name
+        )
         title = st.text_input(
             "Введите название модели. Для сохранения", "Meine_Kleine_Modeleen"
         )

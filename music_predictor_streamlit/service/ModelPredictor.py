@@ -66,10 +66,14 @@ class ModelPredictor:
 
     def _predict_model(self, name: str, file: UploadedFile):
         logger.info(f"Predicting {name}")
-        model_body = {'model_name': name}
-        res = requests.post(self._predict_genre_url, files ={
-            "data": (file.name, file.getvalue(), file.type),
-        }, data=model_body)
+        model_body = {"model_name": name}
+        res = requests.post(
+            self._predict_genre_url,
+            files={
+                "data": (file.name, file.getvalue(), file.type),
+            },
+            data=model_body,
+        )
         if res.status_code != 200:
             logger.info(res.status_code)
             st.error("Не удалось получить предсказание")

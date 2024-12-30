@@ -9,7 +9,9 @@ import tqdm
 
 
 class MultilabelExperiment:
-    def __init__(self, model, criterion, optimizer, train_loader, val_loader, device="cpu"):
+    def __init__(
+        self, model, criterion, optimizer, train_loader, val_loader, device="cpu"
+    ):
         self.model = model.to(device)
         self.criterion = criterion
         self.optimizer = optimizer
@@ -62,11 +64,17 @@ class MultilabelExperiment:
         for i in range(num_classes):
             y_true_label = y_true[:, i]
             y_pred_label = y_pred[:, i]
-            tn, fp, fn, tp = confusion_matrix(y_true_label, y_pred_label, labels=[0, 1]).ravel()
+            tn, fp, fn, tp = confusion_matrix(
+                y_true_label, y_pred_label, labels=[0, 1]
+            ).ravel()
             precision = tp / (tp + fp) if (tp + fp) > 0 else 0
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
-            specificity = tn / (tn + fp)  if (tn + fp) > 0 else 0
+            f1 = (
+                2 * precision * recall / (precision + recall)
+                if (precision + recall) > 0
+                else 0
+            )
+            specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
             bal_accuracy = (recall + specificity) / 2
             precision_list.append(precision)
             recall_list.append(recall)
@@ -78,10 +86,14 @@ class MultilabelExperiment:
         avg_recall = np.mean(recall_list)
         avg_f1 = np.mean(f1_list)
         avg_accuracy = np.mean(accuracy_list)
-        metrics_table.append(["Balanced average", avg_precision, avg_recall, avg_f1, avg_accuracy])
+        metrics_table.append(
+            ["Balanced average", avg_precision, avg_recall, avg_f1, avg_accuracy]
+        )
 
         headers = ["Label", "Precision", "Recall", "F1-Score", "Balanced accuracy"]
-        logger.info(tabulate(metrics_table, headers=headers, floatfmt=".4f", tablefmt="grid"))
+        logger.info(
+            tabulate(metrics_table, headers=headers, floatfmt=".4f", tablefmt="grid")
+        )
 
 
 class MultilabelClassifier2D(nn.Module):
@@ -92,10 +104,10 @@ class MultilabelClassifier2D(nn.Module):
             nn.Linear(sequence_length * input_dim, num_params),
             nn.ReLU(),
             nn.Linear(num_params, num_classes),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
 
-    def set_dataset_name(self, training_dataset_name:str):
+    def set_dataset_name(self, training_dataset_name: str):
         self.training_dataset_name = training_dataset_name
 
     def get_dataset_name(self):

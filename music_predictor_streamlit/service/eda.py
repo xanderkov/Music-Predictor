@@ -38,7 +38,7 @@ class EDA:
     def get_pandas_from_backend(
         self, json_file: UploadedFile, zip_file: UploadedFile
     ) -> pd.DataFrame | None:
-        with st.spinner('Обрабатываем датасет...'):
+        with st.spinner("Обрабатываем датасет..."):
             logger.info("Files getted")
             files = {
                 "json_file": (json_file.name, json_file.getvalue(), json_file.type),
@@ -52,7 +52,9 @@ class EDA:
             logger.info("Success")
             st.success("Файлы загружены на сервер!")
             # st.json(response.json())
-            df = self.transform_json_response_to_dataframe(pickle.loads(response.content))
+            df = self.transform_json_response_to_dataframe(
+                pickle.loads(response.content)
+            )
         else:
             error = f"Error: {response.json().get('message', 'Unknown error occurred')}"
             st.error(error)
@@ -122,8 +124,12 @@ class EDA:
                     url,
                     data={"name": title},
                     files={
-                    "pickled_dataset": (f"{title}.pkl", pickle.dumps(df), "application/octet-stream"),
-                    }
+                        "pickled_dataset": (
+                            f"{title}.pkl",
+                            pickle.dumps(df),
+                            "application/octet-stream",
+                        ),
+                    },
                 )
                 if response.status_code == 200:
                     st.success(f"Датасет с именем {title} сохранен")
@@ -152,7 +158,7 @@ class EDA:
     def make_eda(self) -> pd.DataFrame | None:
         st.title("EDA")
 
-        if 'button_clicked' not in st.session_state:
+        if "button_clicked" not in st.session_state:
             st.session_state.button_clicked = False
         df = None
         if not st.session_state.button_clicked:
@@ -161,10 +167,15 @@ class EDA:
                 "{'0': {'genres': 'soundtrack classical', 'image_path': 'path'}}",
                 type="json",
             )
-            zip_file = st.file_uploader("Загрузите ZIP файл со спектограммами", type="zip", )
+            zip_file = st.file_uploader(
+                "Загрузите ZIP файл со спектограммами",
+                type="zip",
+            )
 
             if "df" not in st.session_state and json_file and zip_file:
-                st.session_state["df"] = self.get_pandas_from_backend(json_file, zip_file)
+                st.session_state["df"] = self.get_pandas_from_backend(
+                    json_file, zip_file
+                )
 
             df = st.session_state.get("df")
 
