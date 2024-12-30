@@ -15,10 +15,12 @@ class MusicModelSettings(BaseSettings):
 
 
 class EdaSettings(BaseSettings):
-    min_num_genres: int = 40
+    min_num_genres: int = 2
+
 
 class LoggerSettings(BaseSettings):
     loki_url: str = "http://localhost:3100/loki/api/v1/push"
+
 
 class Settings(BaseSettings, case_sensitive=False):
     music_model: MusicModelSettings = MusicModelSettings()

@@ -1,16 +1,124 @@
 components:
   schemas:
-    Body_predict_by_spectorgrams_api_v1_model_predict_by_spectorgrams_post:
+    Body_convert_files_to_dataframe_api_v1_upload_dataset_post:
       properties:
-        files:
+        json_file:
+          format: binary
+          title: Json File
+          type: string
+        zip_file:
+          format: binary
+          title: Zip File
+          type: string
+      required:
+      - json_file
+      - zip_file
+      title: Body_convert_files_to_dataframe_api_v1_upload_dataset_post
+      type: object
+    Body_predict_api_v1_predict_post:
+      properties:
+        data:
+          format: binary
+          title: Data
+          type: string
+        model_name:
+          title: Model Name
+          type: string
+      required:
+      - model_name
+      - data
+      title: Body_predict_api_v1_predict_post
+      type: object
+    Body_set_dataset_name_api_v1_set_dataset_name_post:
+      properties:
+        name:
+          title: Name
+          type: string
+        pickled_dataset:
+          format: binary
+          title: Pickled Dataset
+          type: string
+      required:
+      - name
+      - pickled_dataset
+      title: Body_set_dataset_name_api_v1_set_dataset_name_post
+      type: object
+    DatasetNameRequest:
+      properties:
+        name:
+          title: Name
+          type: string
+      required:
+      - name
+      title: DatasetNameRequest
+      type: object
+    DatasetNameResponse:
+      properties:
+        message:
+          title: Message
+          type: string
+      required:
+      - message
+      title: DatasetNameResponse
+      type: object
+    DatasetNamesResponse:
+      properties:
+        names:
           items:
-            format: binary
             type: string
-          title: Files
+          title: Names
           type: array
       required:
-      - files
-      title: Body_predict_by_spectorgrams_api_v1_model_predict_by_spectorgrams_post
+      - names
+      title: DatasetNamesResponse
+      type: object
+    FitRequest:
+      properties:
+        dataset_name:
+          title: Dataset Name
+          type: string
+        epochs:
+          title: Epochs
+          type: integer
+        learning_rate:
+          title: Learning Rate
+          type: number
+      required:
+      - epochs
+      - learning_rate
+      - dataset_name
+      title: FitRequest
+      type: object
+    FitResponse:
+      properties:
+        model_number_id:
+          title: Model Number Id
+          type: string
+        training_loss_history:
+          items:
+            type: number
+          title: Training Loss History
+          type: array
+        y_pred:
+          items:
+            items:
+              type: integer
+            type: array
+          title: Y Pred
+          type: array
+        y_true:
+          items:
+            items:
+              type: integer
+            type: array
+          title: Y True
+          type: array
+      required:
+      - y_true
+      - y_pred
+      - training_loss_history
+      - model_number_id
+      title: FitResponse
       type: object
     HTTPValidationError:
       properties:
@@ -21,17 +129,42 @@ components:
           type: array
       title: HTTPValidationError
       type: object
-    ListPredictResponses:
+    LabelsResponse:
       properties:
-        predicted_genres:
-          default: []
+        labels:
           items:
-            $ref: '#/components/schemas/PredictResponse'
-          title: Predicted Genres
+            type: string
+          title: Labels
           type: array
-      title: ListPredictResponses
+      required:
+      - labels
+      title: LabelsResponse
       type: object
-    PredictResponse:
+    ModelNameRequest:
+      properties:
+        id:
+          title: Id
+          type: string
+        name:
+          title: Name
+          type: string
+      required:
+      - name
+      - id
+      title: ModelNameRequest
+      type: object
+    ModelsNamesResponse:
+      properties:
+        names:
+          items:
+            type: string
+          title: Names
+          type: array
+      required:
+      - names
+      title: ModelsNamesResponse
+      type: object
+    PredictByModelResponse:
       properties:
         genres:
           items:
@@ -40,7 +173,7 @@ components:
           type: array
       required:
       - genres
-      title: PredictResponse
+      title: PredictByModelResponse
       type: object
     ValidationError:
       properties:
@@ -78,21 +211,21 @@ paths:
               schema: {}
           description: Successful Response
       summary: Docs Redirect
-  /api/v1/model/predict_by_spectorgrams:
+  /api/v1/fit_model:
     post:
-      operationId: predict_by_spectorgrams_api_v1_model_predict_by_spectorgrams_post
+      operationId: fit_model_api_v1_fit_model_post
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              $ref: '#/components/schemas/Body_predict_by_spectorgrams_api_v1_model_predict_by_spectorgrams_post'
+              $ref: '#/components/schemas/FitRequest'
         required: true
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListPredictResponses'
+                $ref: '#/components/schemas/FitResponse'
           description: Successful Response
         '404':
           description: Not found
@@ -102,6 +235,170 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
-      summary: Predict By Spectorgrams
+      summary: Fit Model
+      tags:
+      - Music
+  /api/v1/get_datasets_names:
+    get:
+      operationId: get_datasets_names_api_v1_get_datasets_names_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetNamesResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+      summary: Get Datasets Names
+      tags:
+      - Music
+  /api/v1/get_labels:
+    post:
+      operationId: get_labels_api_v1_get_labels_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetNameRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelsResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get Labels
+      tags:
+      - Music
+  /api/v1/models_names:
+    get:
+      operationId: get_models_names_api_v1_models_names_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsNamesResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+      summary: Get Models Names
+      tags:
+      - Music
+  /api/v1/predict:
+    post:
+      operationId: predict_api_v1_predict_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_predict_api_v1_predict_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictByModelResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Predict
+      tags:
+      - Music
+  /api/v1/save_model_name:
+    post:
+      operationId: save_model_name_api_v1_save_model_name_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModelNameRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetNameResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Save Model Name
+      tags:
+      - Music
+  /api/v1/set_dataset_name:
+    post:
+      operationId: set_dataset_name_api_v1_set_dataset_name_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_set_dataset_name_api_v1_set_dataset_name_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DatasetNameResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Set Dataset Name
+      tags:
+      - Music
+  /api/v1/upload_dataset:
+    post:
+      operationId: convert_files_to_dataframe_api_v1_upload_dataset_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_convert_files_to_dataframe_api_v1_upload_dataset_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Convert Files To Dataframe
       tags:
       - Music

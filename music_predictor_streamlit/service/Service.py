@@ -13,10 +13,11 @@ class Service:
         self._eda = "Датасеты. Сформировать"
         self._train = "Обучить модель"
         self._predict_step = "Предсказать жанр песни"
-    
+
     def start_service(self):
         condition = st.sidebar.selectbox(
-            "Выберете этап", (self._about_project, self._eda, self._train, self._predict_step)
+            "Выберете этап",
+            (self._about_project, self._eda, self._train, self._predict_step),
         )
         if condition == self._about_project:
             logger.info("Choose about project")
@@ -25,7 +26,7 @@ class Service:
             logger.info("Choose eda step")
             eda = EDA()
             eda.make_eda()
-        elif condition == self._train: 
+        elif condition == self._train:
             logger.info("Choose train step")
 
             model_trainer = ModelTrainer()

@@ -6,11 +6,11 @@ from loguru import logger
 from music_predictor_backend.settings.settings import config
 
 
-
 def setup_logger():
     if not os.path.exists("logs"):
         os.makedirs("logs")
     logger.add("logs/app.log", rotation="1 MB")
+
 
 def setup_loki():
     logger.add(
