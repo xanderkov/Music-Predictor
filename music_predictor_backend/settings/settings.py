@@ -20,6 +20,7 @@ class MusicModelSettings(BaseSettings):
     model_dir: str = f"{path_backend}/models/"
     model_metadata_file: str = f"{path_backend}/model_names.json/"
     dataset_dir: str = f"{path_backend}/datasets/"
+    model_metadata_path: str = f"{path_backend}/models/model_names.json"
 
 
 class Settings(BaseSettings, case_sensitive=False):

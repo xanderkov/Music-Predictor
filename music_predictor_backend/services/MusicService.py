@@ -1,21 +1,25 @@
 import io
 import json
 import zipfile
+from pathlib import Path
 
 import pandas as pd
+from fastapi import Depends, File, Form, HTTPException, UploadFile
 from loguru import logger
 
-from fastapi import Depends, File, HTTPException, UploadFile
-
 from music_predictor_backend.dto.MusicDTO import (
-    MusicEntry,
+    DatasetNameRequest,
+    DatasetNameResponse,
     DatasetNamesResponse,
-    FitResponse,
     FitRequest,
+    FitResponse,
+    LabelsResponse,
+    ModelNameRequest,
+    ModelsNamesResponse,
+    MusicEntry,
 )
 from music_predictor_backend.repository.ModelSpectogramRepo import ModelSpecRepo
 from music_predictor_backend.repository.SpectogramRepo import SpecRepo
-from pathlib import Path
 
 
 class MusicService:
@@ -85,4 +89,42 @@ class MusicService:
         logger.info("Fit model")
         return await self._model_spec_repo.fit_model(
             model_inputs, fit_request, train_loader, val_loader
+        )
+
+    def get_labels(self, name: DatasetNameRequest) -> LabelsResponse:
+        logger.info("Getting labels")
+        return self._data_spec_repo.get_labels(name)
+
+    async def get_models_names(self):
+        all_models = await self._model_spec_repo.load_model_metadata()
+        return ModelsNamesResponse(names=all_models.keys())
+
+    async def predict(self, model_name: str = Form(...), data: UploadFile = File(...)):
+        all_models = await self._model_spec_repo.load_model_metadata()
+        if model_name not in all_models:
+            raise HTTPException(status_code=404, detail="Model not found")
+        model = await self._model_spec_repo.load_model(all_models[model_name])
+        image_bytes = await data.read()
+
+        image_tensor = await self._data_spec_repo.preprocess_image(image_bytes)
+        predicted_genres = self.get_labels(
+            DatasetNameRequest(name=model.get_dataset_name())
+        )
+        logger.info("Predict model")
+        return await self._model_spec_repo.predict(
+            model, image_tensor, predicted_genres
+        )
+
+    async def save_model_name(self, model: ModelNameRequest):
+        all_models = await self._model_spec_repo.load_model_metadata()
+
+        if model.name in all_models:
+            raise HTTPException(
+                status_code=400, detail=f"Model name '{model.name}' already exists"
+            )
+        all_models[model.name] = model.id
+
+        await self._model_spec_repo.save_model_metadata(all_models)
+        return DatasetNameResponse(
+            message=f"Model '{model.name}' with ID {model.id} has been saved."
         )

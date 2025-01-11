@@ -29,20 +29,6 @@ components:
       - data
       title: Body_predict_api_v1_predict_post
       type: object
-    Body_set_dataset_name_api_v1_set_dataset_name_post:
-      properties:
-        name:
-          title: Name
-          type: string
-        pickled_dataset:
-          format: binary
-          title: Pickled Dataset
-          type: string
-      required:
-      - name
-      - pickled_dataset
-      title: Body_set_dataset_name_api_v1_set_dataset_name_post
-      type: object
     DatasetNameRequest:
       properties:
         name:
@@ -347,33 +333,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Save Model Name
-      tags:
-      - Music
-  /api/v1/set_dataset_name:
-    post:
-      operationId: set_dataset_name_api_v1_set_dataset_name_post
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Body_set_dataset_name_api_v1_set_dataset_name_post'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DatasetNameResponse'
-          description: Successful Response
-        '404':
-          description: Not found
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Set Dataset Name
       tags:
       - Music
   /api/v1/upload_dataset:

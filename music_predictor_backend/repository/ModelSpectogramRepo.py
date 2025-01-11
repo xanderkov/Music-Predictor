@@ -1,29 +1,32 @@
+import json
 import os
 import pickle
 import uuid
 
+import torch
+from fastapi import HTTPException
 from loguru import logger
+from torch.utils.data import DataLoader
 
+from music_predictor_backend.dto.MusicDTO import (
+    FitRequest,
+    FitResponse,
+    LabelsResponse,
+    ModelInputs,
+    PredictByModelResponse,
+)
 from music_predictor_backend.models.multilabel_model import (
     MultilabelClassifier2D,
     MultilabelExperiment,
 )
 from music_predictor_backend.settings.settings import config
-import torch
-from music_predictor_backend.dto.MusicDTO import (
-    MusicEntry,
-    DatasetNamesResponse,
-    FitResponse,
-    FitRequest,
-    ModelInputs,
-)
-from torch.utils.data import DataLoader, TensorDataset
 
 
 class ModelSpecRepo:
     def __init__(self):
         self._config = config.music_model
         self.model_dir = self._config.model_dir
+        self._model_metadata_path = self._config.model_metadata_path
 
     @staticmethod
     async def _generate_id_number():
@@ -97,3 +100,47 @@ class ModelSpecRepo:
             training_loss_history=experiment.training_loss_history,
             model_number_id=model_id,
         )
+
+    async def load_model_metadata(self):
+        if os.path.exists(self._model_metadata_path):
+            with open(self._model_metadata_path, "r") as f:
+                return json.load(f)
+        return {}
+
+    async def save_model_metadata(self, all_models):
+        with open(self._model_metadata_path, "w") as f:
+            json.dump(all_models, f, indent=4)
+
+    async def load_model(self, id_number) -> MultilabelClassifier2D:
+        model_path = os.path.join(self.model_dir, f"{id_number}.pkl")
+
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(
+                f"Model file with id_number: {id_number} does not exist."
+            )
+
+        with open(model_path, "rb") as model_file:
+            model = pickle.load(model_file)
+        return model
+
+    async def predict(
+        self,
+        model: MultilabelClassifier2D,
+        image_tensor: torch.Tensor,
+        predicted_genres: LabelsResponse,
+    ):
+        try:
+            model.eval()
+            with torch.no_grad():
+                output = model(image_tensor).numpy()
+            threshold = 0.1
+            predicted_genres = [
+                genre
+                for i, genre in enumerate(predicted_genres.labels)
+                if output[0][i] > threshold
+            ]
+            return PredictByModelResponse(genres=predicted_genres)
+
+        except Exception as e:
+            logger.info(str(e))
+            raise HTTPException(status_code=400, detail=str(e))

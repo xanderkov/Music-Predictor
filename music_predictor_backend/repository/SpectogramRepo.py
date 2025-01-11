@@ -1,21 +1,27 @@
+import io
 import os
 import zipfile
+from functools import partial
+from multiprocessing import Pool, cpu_count
 
-import pandas as pd
+import cv2
 import numpy as np
-from loguru import logger
-import tqdm
+import pandas as pd
 import torch
-
-from music_predictor_backend.dto.MusicDTO import DatasetNamesResponse, ModelInputs
-from music_predictor_backend.settings.settings import config
+import tqdm
+from loguru import logger
+from PIL import Image
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MultiLabelBinarizer, StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
-from multiprocessing import Pool, cpu_count
-from functools import partial
-from PIL import Image
-import cv2
+
+from music_predictor_backend.dto.MusicDTO import (
+    DatasetNameRequest,
+    DatasetNamesResponse,
+    LabelsResponse,
+    ModelInputs,
+)
+from music_predictor_backend.settings.settings import config
 
 
 class SpecRepo:
@@ -24,6 +30,7 @@ class SpecRepo:
         self._dataset_dir = self._config.dataset_dir
         self._json_name = "/spectograms.json"
         self._images_path_name = "/images"
+        self._classes_name = "classes.txt"
         self._part_size = 16
         self.sequence_length = None
         self.input_dim = None
@@ -118,7 +125,7 @@ class SpecRepo:
         Extract SIFT features from the image.
         """
         if image is None:
-            raise ValueError(f"Error loading empty image")
+            raise ValueError("Error loading empty image")
 
         sift = cv2.SIFT_create(nfeatures=nfeatures)
         kp, descriptors = sift.detectAndCompute(np.array(image, dtype=np.uint8), None)
@@ -154,7 +161,7 @@ class SpecRepo:
         y_train = mlb.fit_transform(y_train.apply(lambda row: row.split(" ")))
         y_test_encoder = mlb.transform(y_test.apply(lambda row: row.split(" ")))
 
-        with open(f"{dataset_folder}/classes.txt", "w") as file:
+        with open(f"{dataset_folder}/{self._classes_name}", "w") as file:
             for genre in mlb.classes_:
                 file.write(f"{genre}\n")
 
@@ -217,3 +224,29 @@ class SpecRepo:
             input_dim=self.input_dim,
             num_classes=self.num_classes,
         )
+
+    def get_labels(self, name: DatasetNameRequest) -> LabelsResponse:
+        classes_file_path = f"{self._dataset_dir}/{name.name}/{self._classes_name}"
+        logger.info(f"Loading labels from {classes_file_path}")
+        if not os.path.exists(classes_file_path):
+            logger.error("File no Founed")
+            raise FileNotFoundError(
+                f"The classes file does not exist: {classes_file_path}"
+            )
+
+        with open(classes_file_path, "r") as file:
+            res = LabelsResponse(labels=[line.strip() for line in file.readlines()])
+
+        logger.info(f"{res}")
+        return res
+
+    async def preprocess_image(self, image_bytes: bytes) -> torch.Tensor:
+        image = Image.open(io.BytesIO(image_bytes))
+
+        image = np.array(image.convert("L"))
+        image_tensor = (
+            torch.tensor(self.process_sample(image), dtype=torch.float32)
+            .unsqueeze(0)
+            .unsqueeze(0)
+        )
+        return image_tensor
