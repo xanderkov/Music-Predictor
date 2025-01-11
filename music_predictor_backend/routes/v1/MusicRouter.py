@@ -1,183 +1,67 @@
-import argparse
-import json
-from logging import debug
-from random import random, randint
-import torch
-import torch.optim as optim
-from music_predictor_backend.services.MusicService import MusicService
-from music_predictor_backend.models.multilabel_model import (
-    MultilabelClassifier2D,
-    MultilabelExperiment,
-)
-from typing import List
-import uuid
-from PIL import Image
-import gzip
 import io
-import zipfile
+import json
+import os
 import pickle
+import uuid
+import zipfile
+
 import numpy as np
 import pandas as pd
-import yaml
-from fastapi import APIRouter, FastAPI, File, Form, UploadFile, HTTPException
+import torch
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from loguru import logger
-from sklearn.preprocessing import MultiLabelBinarizer
-import uvicorn
-from backend_data import DATA_PATH
-import os
+from PIL import Image
 
 from music_predictor_backend.dto.MusicDTO import (
     DatasetNameRequest,
     DatasetNameResponse,
+    DatasetNamesResponse,
     FitRequest,
     FitResponse,
     LabelsResponse,
-    DatasetNamesResponse,
     ModelNameRequest,
     ModelsNamesRequest,
     ModelsNamesResponse,
     PredictByModelResponse,
     PredictFilenameResponse,
 )
+from music_predictor_backend.models.multilabel_model import (
+    MultilabelClassifier2D,
+    MultilabelExperiment,
+)
+from music_predictor_backend.services.MusicService import MusicService
 
-
-MODEL_DIR = f"{DATA_PATH}/models/"
-MODEL_METADATA_FILE = os.path.join(DATA_PATH, "model_names.json")
-
-tempRouter = APIRouter(
+musicRouter = APIRouter(
     tags=["Music"],
     responses={404: {"description": "Not found"}},
     prefix="/api/v1",
 )
 
 
-async def save_model(model, id_number: str) -> str:
-    if not os.path.exists(MODEL_DIR):
-        os.makedirs(MODEL_DIR)
-    model_path = os.path.join(MODEL_DIR, f"{id_number}.pkl")
-
-    if os.path.exists(model_path):
-        raise FileExistsError(f"Model file already exists for id_number: {id_number}")
-
-    with open(model_path, "wb") as model_file:
-        pickle.dump(model, model_file)
-    return model_path
-
-
-async def generate_id_number():
-    return str(uuid.uuid4())
-
-
-async def save_model_with_retry(model, max_retries: int = 5):
-    retries = 0
-    while retries < max_retries:
-        try:
-            id_number = await generate_id_number()
-            model_path = await save_model(model, id_number)
-            logger.info(f"Model saved successfully with ID: {id_number}")
-            return id_number, model_path
-        except FileExistsError:
-            retries += 1
-            logger.info(
-                f"Duplicate file detected. Retrying... ({retries}/{max_retries})"
-            )
-
-    raise RuntimeError(
-        "Failed to save model after multiple attempts due to duplicates."
-    )
-
-
-@tempRouter.post("/upload_dataset")
+@musicRouter.post("/upload_dataset")
 async def convert_files_to_dataframe(
     json_file: UploadFile = File(...),
     zip_file: UploadFile = File(...),
-):
-    logger.info("Get files")
-
+    music_service: MusicService = Depends(),
+) -> JSONResponse:
     if json_file.content_type != "application/json":
         raise HTTPException(
             status_code=400, detail={"message": "Invalid JSON file type."}
         )
-    json_content = json.loads(await json_file.read())
-    zip_content = zipfile.ZipFile(io.BytesIO(await zip_file.read()))
 
-    data = []
-
-    for entry in json_content.values():
-        try:
-            genres = entry["genres"]
-            image_path = entry["image_path"]
-        except json.JSONDecodeError:
-            raise HTTPException(
-                status_code=400, detail={"message": "Invalid JSON format."}
-            )
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail={"message": str(e)[:1000]})
-
-        try:
-            with zip_content.open(image_path) as img_file:
-                image = Image.open(img_file)
-                image = image.convert("L")
-                img_array = np.array(image)
-                logger.info(f"Image mode: {image.mode}")
-                logger.info(f"Image shape: {img_array.shape}")
-        except json.JSONDecodeError:
-            raise HTTPException(
-                status_code=400, detail={"message": "Picture cannot be processed."}
-            )
-        data.append({"genres": genres, "img": img_array.tolist()})
-
-    df = pd.DataFrame(data)
-
-    if isinstance(df, pd.DataFrame):
-        byte_stream = io.BytesIO()
-        pickle.dump(df, byte_stream)
-        byte_stream.seek(0)
-        return StreamingResponse(byte_stream, media_type="application/octet-stream")
+    df = await music_service.convert_files_to_dataframe(json_file, zip_file)
+    return JSONResponse(content=df.to_dict(orient="records"))
 
 
-@tempRouter.post("/fit_model")
-async def fit_model(fit_request: FitRequest) -> FitResponse:
-    logger.info(
-        f"Starting model training for {fit_request.epochs} epochs with learning rate {fit_request.learning_rate}"
-    )
-
-    music_service = MusicService()
-    train_loader, val_loader = music_service.load_data(fit_request.dataset_name)
-
-    sequence_length, input_dim, num_classes = music_service.get_datasets_shape()
-    model = MultilabelClassifier2D(
-        sequence_length=sequence_length, input_dim=input_dim, num_classes=num_classes
-    )
-    optimizer = optim.Adam(model.parameters(), lr=fit_request.learning_rate)
-    criterion = torch.nn.BCELoss()
-
-    experiment = MultilabelExperiment(
-        model=model,
-        criterion=criterion,
-        optimizer=optimizer,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        device="cpu",
-    )
-
-    experiment.train(num_epochs=fit_request.epochs)
-    experiment.model.set_dataset_name(fit_request.dataset_name)
-
-    y_pred, y_true = experiment.validate()
-    logger.info("Training ended successfully")
-    model_id, _ = await save_model_with_retry(experiment.model)
-    return FitResponse(
-        y_true=y_true.tolist(),
-        y_pred=y_pred.tolist(),
-        training_loss_history=experiment.training_loss_history,
-        model_number_id=model_id,
-    )
+@musicRouter.post("/fit_model")
+async def fit_model(
+    fit_request: FitRequest, music_service: MusicService = Depends()
+) -> FitResponse:
+    return await music_service.fit_model(fit_request)
 
 
-@tempRouter.post("/get_labels")
+@musicRouter.post("/get_labels")
 async def get_labels(name: DatasetNameRequest) -> LabelsResponse:
     logger.info("Get files")
     classes_file_path = os.path.join(DATA_PATH, "datasets", name.name, "classes.txt")
@@ -192,7 +76,7 @@ async def get_labels(name: DatasetNameRequest) -> LabelsResponse:
     return res
 
 
-@tempRouter.post("/set_dataset_name")
+@musicRouter.post("/set_dataset_name")
 async def set_dataset_name(
     name: str = Form(...), pickled_dataset: UploadFile = File(...)
 ) -> DatasetNameResponse:
@@ -217,22 +101,20 @@ async def set_dataset_name(
         return DatasetNameResponse(message=f"Сохранен датасет {name}")
 
 
-@tempRouter.get("/get_datasets_names")
-async def get_datasets_names() -> DatasetNamesResponse:
-    datasets_dir = f"{DATA_PATH}/datasets"
-    if not os.path.exists(datasets_dir):
-        return DatasetNamesResponse(names=[])
-    dataset_files = [file for file in os.listdir(datasets_dir)]
-    return DatasetNamesResponse(names=dataset_files)
+@musicRouter.get("/get_datasets_names")
+async def get_datasets_names(
+    music_service: MusicService = Depends(),
+) -> DatasetNamesResponse:
+    return music_service.get_datasets_names()
 
 
-@tempRouter.get("/models_names")
+@musicRouter.get("/models_names")
 async def get_models_names() -> ModelsNamesResponse:
     all_models = await load_model_metadata()
     return ModelsNamesResponse(names=all_models.keys())
 
 
-@tempRouter.post("/predict")
+@musicRouter.post("/predict")
 async def predict(
     model_name: str = Form(...),
     data: UploadFile = File(...),
@@ -288,7 +170,7 @@ async def save_model_metadata(all_models):
         json.dump(all_models, f, indent=4)
 
 
-@tempRouter.post("/save_model_name")
+@musicRouter.post("/save_model_name")
 async def save_model_name(model: ModelNameRequest) -> DatasetNameResponse:
     all_models = await load_model_metadata()
 

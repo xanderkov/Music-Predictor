@@ -51,10 +51,11 @@ class EDA:
         if response.status_code == 200:
             logger.info("Success")
             st.success("Файлы загружены на сервер!")
-            # st.json(response.json())
-            df = self.transform_json_response_to_dataframe(
-                pickle.loads(response.content)
-            )
+            st.json(response.json())
+            df = self.transform_json_response_to_dataframe(response.json())
+            # df = self.transform_json_response_to_dataframe(
+            #     pickle.loads(response.content)
+            # )
         else:
             error = f"Error: {response.json().get('message', 'Unknown error occurred')}"
             st.error(error)
@@ -158,30 +159,25 @@ class EDA:
     def make_eda(self) -> pd.DataFrame | None:
         st.title("EDA")
 
-        if "button_clicked" not in st.session_state:
-            st.session_state.button_clicked = False
         df = None
-        if not st.session_state.button_clicked:
-            json_file = st.file_uploader(
-                "Загрузите JSON файл вида: "
-                "{'0': {'genres': 'soundtrack classical', 'image_path': 'path'}}",
-                type="json",
-            )
-            zip_file = st.file_uploader(
-                "Загрузите ZIP файл со спектограммами",
-                type="zip",
-            )
+        json_file = st.file_uploader(
+            "Загрузите JSON файл вида: "
+            "{'0': {'genres': 'soundtrack classical', 'image_path': 'path'}}",
+            type="json",
+        )
+        zip_file = st.file_uploader(
+            "Загрузите ZIP файл со спектограммами",
+            type="zip",
+        )
 
-            if "df" not in st.session_state and json_file and zip_file:
-                st.session_state["df"] = self.get_pandas_from_backend(
-                    json_file, zip_file
-                )
+        if "df" not in st.session_state and json_file and zip_file:
+            st.session_state["df"] = self.get_pandas_from_backend(json_file, zip_file)
 
-            df = st.session_state.get("df")
+        df = st.session_state.get("df")
 
         if df is not None:
             self.create_analytic(df)
-        self._set_dataset_name(df)
+        # self._set_dataset_name(df)
 
         # st.success("Вы удачно прошли этап EDA проходите на этап обучения!")
 

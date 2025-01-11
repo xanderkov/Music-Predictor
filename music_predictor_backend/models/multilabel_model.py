@@ -1,11 +1,11 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import tqdm
 from sklearn.metrics import confusion_matrix
 from tabulate import tabulate
-import matplotlib.pyplot as plt
-import numpy as np
-import tqdm
 
 
 class MultilabelExperiment:

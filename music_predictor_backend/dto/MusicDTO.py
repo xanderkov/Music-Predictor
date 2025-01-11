@@ -1,5 +1,5 @@
+from fastapi import Request, UploadFile
 from pydantic import BaseModel
-from fastapi import UploadFile, Request
 
 
 class FitRequest(BaseModel):
@@ -50,3 +50,14 @@ class PredictByModelResponse(BaseModel):
 class ModelNameRequest(BaseModel):
     name: str
     id: str
+
+
+class MusicEntry(BaseModel):
+    genres: str
+    image_path: str
+
+
+class ModelInputs(BaseModel):
+    sequence_length: int
+    input_dim: int
+    num_classes: int

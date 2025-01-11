@@ -1,9 +1,9 @@
-from typing import Type, Tuple
+from typing import Tuple, Type
 
 from pydantic_settings import (
     BaseSettings,
-    SettingsConfigDict,
     PydanticBaseSettingsSource,
+    SettingsConfigDict,
     YamlConfigSettingsSource,
 )
 
@@ -16,6 +16,10 @@ class MusicModelSettings(BaseSettings):
     path_backend: str = "./backend_data"
     backend_host: str = "127.0.0.1"
     backend_port: int = 22448
+
+    model_dir: str = f"{path_backend}/models/"
+    model_metadata_file: str = f"{path_backend}/model_names.json/"
+    dataset_dir: str = f"{path_backend}/datasets/"
 
 
 class Settings(BaseSettings, case_sensitive=False):
