@@ -13,9 +13,20 @@ from loguru import logger
 from sklearn.preprocessing import MultiLabelBinarizer
 import uvicorn
 
-from music_predictor_streamlit.dto.dto import DatasetNameRequest, DatasetNameResponse, FitRequest, FitResponse, \
-    LabelsResponse, DatasetNamesResponse, ModelNameRequest, ModelsNamesRequest, ModelsNamesResponse, PredictByModelResponse, PredictFilenameResponse, \
-    PredictByModelRequest
+from music_predictor_streamlit.dto.dto import (
+    DatasetNameRequest,
+    DatasetNameResponse,
+    FitRequest,
+    FitResponse,
+    LabelsResponse,
+    DatasetNamesResponse,
+    ModelNameRequest,
+    ModelsNamesRequest,
+    ModelsNamesResponse,
+    PredictByModelResponse,
+    PredictFilenameResponse,
+    PredictByModelRequest,
+)
 
 app = FastAPI()
 
@@ -90,7 +101,7 @@ async def get_labels(name: DatasetNameRequest) -> LabelsResponse:
 
 @app.post("/api/v1/set_dataset_name")
 async def set_dataset_name(dataset_name: DatasetNameRequest) -> DatasetNameResponse:
-    return DatasetNameResponse(message=f"Сохранен датасет {dataset_name.name}")    
+    return DatasetNameResponse(message=f"Сохранен датасет {dataset_name.name}")
 
 
 @app.get("/api/v1/get_datasets_names")
@@ -105,15 +116,18 @@ async def get_models_names() -> ModelsNamesResponse:
 
 @app.post("/api/v1/save_predict_file")
 async def save_predict_file(data: UploadFile = File(...)) -> PredictFilenameResponse:
-    return PredictFilenameResponse(name="Bugaga")    
+    return PredictFilenameResponse(name="Bugaga")
+
 
 @app.post("/api/v1/predict")
 async def predict(data: PredictByModelRequest) -> PredictByModelResponse:
-    return PredictByModelResponse(genres=["metall", "rock"])    
+    return PredictByModelResponse(genres=["metall", "rock"])
+
 
 @app.post("/api/v1/save_model_name")
 async def save_model_name(model: ModelNameRequest) -> DatasetNameResponse:
-    return DatasetNameResponse(message=f"Сохранена модель {model.name}")    
+    return DatasetNameResponse(message=f"Сохранена модель {model.name}")
+
 
 if __name__ == "__main__":
     uvicorn.run("mock_backend:app", host="0.0.0.0", port=22448, reload=True)

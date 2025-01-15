@@ -3,10 +3,14 @@ import pandas as pd
 import requests
 import streamlit as st
 from loguru import logger
+import pickle
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 from music_predictor_streamlit.dto.dto import DatasetNameRequest
-from music_predictor_streamlit.service.utils import pandas_to_fastapi_json, send_post_request
+from music_predictor_streamlit.service.utils import (
+    pandas_to_fastapi_json,
+    send_post_request,
+)
 from music_predictor_streamlit.settings.settings import config
 
 
@@ -34,20 +38,24 @@ class EDA:
     def get_pandas_from_backend(
         self, json_file: UploadedFile, zip_file: UploadedFile
     ) -> pd.DataFrame | None:
-        logger.info("Files getted")
-        files = {
-            "json_file": (json_file.name, json_file.getvalue(), json_file.type),
-            "zip_file": (zip_file.name, zip_file.getvalue(), zip_file.type),
-        }
-        url = self._upload_url
-        logger.info(f"Getting bakcend {url}")
-        response = requests.post(url, files=files)
-        df = None
+        with st.spinner("Обрабатываем датасет..."):
+            logger.info("Files getted")
+            files = {
+                "json_file": (json_file.name, json_file.getvalue(), json_file.type),
+                "zip_file": (zip_file.name, zip_file.getvalue(), zip_file.type),
+            }
+            url = self._upload_url
+            logger.info(f"Getting backend {url}")
+            response = requests.post(url, files=files)
+            df = None
         if response.status_code == 200:
             logger.info("Success")
             st.success("Файлы загружены на сервер!")
-            # st.json(response.json())
+            st.json(response.json())
             df = self.transform_json_response_to_dataframe(response.json())
+            # df = self.transform_json_response_to_dataframe(
+            #     pickle.loads(response.content)
+            # )
         else:
             error = f"Error: {response.json().get('message', 'Unknown error occurred')}"
             st.error(error)
@@ -103,18 +111,37 @@ class EDA:
         if new_df is None:
             new_df = df
         return new_df
-    
+
     def _set_dataset_name(self, df: pd.DataFrame):
         url = self._set_dataset_url
-        logger.info(f"Getting bakcend {url}")
-        title = st.text_input("Введите название датасета", "Meine_Kleine_Dataseten")
-        if st.button("Сохранить датасет"):
+        logger.info(f"Getting backend {url}")
+        title = st.text_input("Введите название датасета", "My dataset")
 
-            dataset_name = DatasetNameRequest(name=title)
-            res = send_post_request(url, dataset_name.model_dump())
-            if res:
-                st.success(f"Датасет с именем {title} сохранен")
-        
+        if st.button("Сохранить датасет"):
+            st.session_state.button_clicked = True
+        if st.session_state.button_clicked:
+            try:
+                response = requests.post(
+                    url,
+                    data={"name": title},
+                    files={
+                        "pickled_dataset": (
+                            f"{title}.pkl",
+                            pickle.dumps(df),
+                            "application/octet-stream",
+                        ),
+                    },
+                )
+                if response.status_code == 200:
+                    st.success(f"Датасет с именем {title} сохранен")
+                else:
+                    error = f"Error: {response.json().get('detail', 'Unknown error occurred')}"
+                    st.error(error)
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+            finally:
+                st.session_state.button_clicked = False
+
     def create_analytic(self, df: pd.DataFrame):
         st.write("Загруженные данные. HEAD:")
         st.dataframe(df.head())
@@ -127,24 +154,31 @@ class EDA:
         st.subheader("Уменьшенное количество жанров")
 
         self.plot_genre_distribution(df)
-
-        self._set_dataset_name(df)
+        return df
 
     def make_eda(self) -> pd.DataFrame | None:
         st.title("EDA")
 
+        df = None
         json_file = st.file_uploader(
             "Загрузите JSON файл вида: "
             "{'0': {'genres': 'soundtrack classical', 'image_path': 'path'}}",
             type="json",
         )
-        zip_file = st.file_uploader("Загрузите ZIP файл со спектограммами", type="zip")
-        df = None
-        if json_file is not None and zip_file is not None:
-            df = self.get_pandas_from_backend(json_file, zip_file)
+        zip_file = st.file_uploader(
+            "Загрузите ZIP файл со спектограммами",
+            type="zip",
+        )
+
+        if "df" not in st.session_state and json_file and zip_file:
+            st.session_state["df"] = self.get_pandas_from_backend(json_file, zip_file)
+
+        df = st.session_state.get("df")
 
         if df is not None:
             self.create_analytic(df)
+        # self._set_dataset_name(df)
+
         # st.success("Вы удачно прошли этап EDA проходите на этап обучения!")
 
         return df

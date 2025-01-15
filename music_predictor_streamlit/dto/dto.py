@@ -23,7 +23,7 @@ class DatasetNameRequest(BaseModel):
 class DatasetNameResponse(BaseModel):
     message: str
 
-    
+
 class DatasetNamesResponse(BaseModel):
     names: list[str]
 
@@ -47,6 +47,7 @@ class PredictByModelRequest(BaseModel):
 
 class PredictByModelResponse(BaseModel):
     genres: list[str]
+
 
 class ModelNameRequest(BaseModel):
     name: str

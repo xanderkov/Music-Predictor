@@ -1,6 +1,11 @@
-from typing import Type, Tuple
+from typing import Tuple, Type
 
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource, YamlConfigSettingsSource
+from pydantic_settings import (
+    BaseSettings,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
 
 
 class LoggerSettings(BaseSettings):
@@ -12,10 +17,17 @@ class MusicModelSettings(BaseSettings):
     backend_host: str = "127.0.0.1"
     backend_port: int = 22448
 
+    model_dir: str = f"{path_backend}/models/"
+    model_metadata_file: str = f"{path_backend}/model_names.json/"
+    dataset_dir: str = f"{path_backend}/datasets/"
+    model_metadata_path: str = f"{path_backend}/models/model_names.json"
+
+
 class Settings(BaseSettings, case_sensitive=False):
     music_model: MusicModelSettings = MusicModelSettings()
     model_config = SettingsConfigDict(yaml_file="config/config.yml")
     logger: LoggerSettings = LoggerSettings()
+
     @classmethod
     def settings_customise_sources(
         cls,

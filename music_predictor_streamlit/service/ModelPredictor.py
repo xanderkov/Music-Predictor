@@ -6,9 +6,14 @@ from loguru import logger
 import requests
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from music_predictor_backend.settings.settings import config
-from music_predictor_streamlit.dto.dto import DatasetNamesResponse, ModelsNamesRequest, ModelsNamesResponse, PredictByModelRequest, \
-    PredictFilenameResponse, PredictByModelResponse
+from music_predictor_streamlit.settings.settings import config
+from music_predictor_streamlit.dto.dto import (
+    DatasetNamesResponse,
+    ModelsNamesRequest,
+    ModelsNamesResponse,
+    PredictFilenameResponse,
+    PredictByModelResponse,
+)
 
 
 class ModelPredictor:
@@ -23,7 +28,7 @@ class ModelPredictor:
             "data": (file.name, file.getvalue(), file.type),
         }
         url = self._send_predict_file_url
-        logger.info(f"Getting bakcend {url}")
+        logger.info(f"Getting backend {url}")
         response = requests.post(url, files=files)
         res = None
         if response.status_code != 200:
@@ -33,12 +38,15 @@ class ModelPredictor:
         return res
 
     def _choose_file(self) -> PredictFilenameResponse | None:
-        file = st.file_uploader("Загрузите картинку спектограммы ",# / mp3 / текст песни
-                                type=["png", "jpg", "jpeg",]) #  "mp3", "txt"
-        response = None
-        if file is not None:
-            response = self._send_file(file)
-        return response
+        file = st.file_uploader(
+            "Загрузите картинку спектограммы ",  # / mp3 / текст песни
+            type=[
+                "png",
+                "jpg",
+                "jpeg",
+            ],
+        )  #  "mp3", "txt"
+        return file
 
     def _choose_model(self) -> str | None:
         logger.info(f"Getting model")
@@ -56,17 +64,28 @@ class ModelPredictor:
             st.error("Не получилось получить имя модели")
         return name
 
-    def _predict_model(self, name: str, filename: PredictFilenameResponse):
+    def _predict_model(self, name: str, file: UploadedFile):
         logger.info(f"Predicting {name}")
-        model_body = PredictByModelRequest(filename=filename.name, model_name=name)
-        res = requests.post(self._predict_genre_url, json=model_body.model_dump())
+        model_body = {"model_name": name}
+        res = requests.post(
+            self._predict_genre_url,
+            files={
+                "data": (file.name, file.getvalue(), file.type),
+            },
+            data=model_body,
+        )
         if res.status_code != 200:
+            logger.info(res.status_code)
             st.error("Не удалось получить предсказание")
         else:
             res = PredictByModelResponse.model_validate(res.json())
             st.subheader("Полученные Жанры")
 
-            df = pd.DataFrame(data=res.genres, columns=["Жарны"], index=[i for i in range(len(res.genres))])
+            df = pd.DataFrame(
+                data=res.genres,
+                columns=["Жанры"],
+                index=[i for i in range(len(res.genres))],
+            )
             st.table(df)
 
     def predict(self):

@@ -1,6 +1,8 @@
-from loguru_loki_handler import loki_handler
 from loguru import logger
+from loguru_loki_handler import loki_handler
+
 from music_predictor_backend.settings.settings import config
+
 
 def setup_loki():
     logger.add(
