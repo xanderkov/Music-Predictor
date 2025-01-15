@@ -6,8 +6,8 @@ from loguru import logger
 import requests
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from music_predictor_backend.settings.settings import config
-from music_predictor_backend.dto.MusicDTO import (
+from music_predictor_streamlit.settings.settings import config
+from music_predictor_streamlit.dto.dto import (
     DatasetNamesResponse,
     ModelsNamesRequest,
     ModelsNamesResponse,

@@ -1,11 +1,9 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as optim
+import tqdm
 from sklearn.metrics import confusion_matrix
 from tabulate import tabulate
-import matplotlib.pyplot as plt
-import numpy as np
-import tqdm
 
 
 class MultilabelExperiment:
@@ -110,7 +108,7 @@ class MultilabelClassifier2D(nn.Module):
     def set_dataset_name(self, training_dataset_name: str):
         self.training_dataset_name = training_dataset_name
 
-    def get_dataset_name(self):
+    def get_dataset_name(self) -> str:
         return self.training_dataset_name
 
     def forward(self, x):
