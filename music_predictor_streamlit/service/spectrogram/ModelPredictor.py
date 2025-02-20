@@ -1,19 +1,15 @@
-from logging import log
-
 import pandas as pd
+import requests
 import streamlit as st
 from loguru import logger
-import requests
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from music_predictor_streamlit.settings.settings import config
 from music_predictor_streamlit.dto.dto import (
-    DatasetNamesResponse,
-    ModelsNamesRequest,
     ModelsNamesResponse,
-    PredictFilenameResponse,
     PredictByModelResponse,
+    PredictFilenameResponse,
 )
+from music_predictor_streamlit.settings.settings import config
 
 
 class ModelPredictor:
@@ -45,11 +41,11 @@ class ModelPredictor:
                 "jpg",
                 "jpeg",
             ],
-        )  #  "mp3", "txt"
+        )
         return file
 
     def _choose_model(self) -> str | None:
-        logger.info(f"Getting model")
+        logger.info("Getting model")
         res = requests.get(self._get_models_url)
         name = None
         if res.status_code == 200:
