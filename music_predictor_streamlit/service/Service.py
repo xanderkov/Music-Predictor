@@ -6,6 +6,7 @@ from music_predictor_streamlit.service.spectrogram.eda import EDA
 from music_predictor_streamlit.service.spectrogram.ModelPredictor import ModelPredictor
 from music_predictor_streamlit.service.spectrogram.ModelTrainer import ModelTrainer
 from music_predictor_streamlit.service.text.TextEda import TextEDA
+from music_predictor_streamlit.service.text.TextPredictor import TextPredictor
 from music_predictor_streamlit.service.text.TextTrain import TextTrain
 
 
@@ -61,3 +62,5 @@ class Service:
             text_train.train()
         elif condition == self._predict_text:
             logger.info("Choose predict text")
+            text_predictor = TextPredictor()
+            text_predictor.predict()
