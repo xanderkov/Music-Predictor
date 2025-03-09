@@ -6,6 +6,7 @@ from music_predictor_streamlit.service.spectrogram.eda import EDA
 from music_predictor_streamlit.service.spectrogram.ModelPredictor import ModelPredictor
 from music_predictor_streamlit.service.spectrogram.ModelTrainer import ModelTrainer
 from music_predictor_streamlit.service.text.TextEda import TextEDA
+from music_predictor_streamlit.service.text.TextTrain import TextTrain
 
 
 class Service:
@@ -22,7 +23,15 @@ class Service:
     def start_service(self):
         condition = st.sidebar.selectbox(
             "Выберете этап",
-            (self._about_project, self._eda, self._train, self._predict_step),
+            (
+                self._about_project,
+                self._eda,
+                self._train,
+                self._predict_step,
+                self._eda_text,
+                self._train_text,
+                self._predict_text,
+            ),
         )
         if condition == self._about_project:
             logger.info("Choose about project")
@@ -48,6 +57,7 @@ class Service:
             text_eda.make_eda()
         elif condition == self._train_text:
             logger.info("Choose train text")
-
+            text_train = TextTrain()
+            text_train.train()
         elif condition == self._predict_text:
             logger.info("Choose predict text")
