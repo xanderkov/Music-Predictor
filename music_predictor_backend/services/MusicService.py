@@ -1,158 +1,130 @@
+import io
+import json
+import zipfile
+from pathlib import Path
+
 import pandas as pd
-import torch
-from torch.utils.data import DataLoader, TensorDataset
-from backend_data import DATA_PATH
-import numpy as np
-import cv2
-from multiprocessing import Pool, cpu_count
-import tqdm
-from functools import partial
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import MultiLabelBinarizer
-import os
+from fastapi import Depends, File, Form, HTTPException, UploadFile
+from loguru import logger
+
+from music_predictor_backend.dto.MusicDTO import (
+    DatasetNameRequest,
+    DatasetNameResponse,
+    DatasetNamesResponse,
+    FitRequest,
+    FitResponse,
+    LabelsResponse,
+    ModelNameRequest,
+    ModelsNamesResponse,
+    MusicEntry,
+)
+from music_predictor_backend.repository.ModelSpectogramRepo import ModelSpecRepo
+from music_predictor_backend.repository.SpectogramRepo import SpecRepo
 
 
 class MusicService:
-    def __init__(self):
-        self.sequence_length = None
-        self.input_dim = None
-        self.num_classes = None
+    def __init__(
+        self,
+        model_spec_repo: ModelSpecRepo = Depends(),
+        data_spec_repo: SpecRepo = Depends(),
+    ):
 
-    def load_data(self, dataset_name: str, batch_size: int = 64):
-        dataset_folder = f"{DATA_PATH}/datasets/{dataset_name}"
-        if not os.path.exists(dataset_folder):
-            os.makedirs(dataset_folder)
+        self._model_spec_repo = model_spec_repo
+        self._data_spec_repo = data_spec_repo
 
-        data_file_path = f"{dataset_folder}/{dataset_name}.pkl"
-        dataset = pd.read_pickle(data_file_path).rename({"img": "image"}, axis=1)
-
-        X_train, X_test, y_train, y_test = train_test_split(
-            dataset[["image"]], dataset["genres"], test_size=0.2, random_state=42
-        )
-        train_feats = self._build_features(X_train, nfeatures=1000)
-        test_feats = self._build_features(X_test, nfeatures=1000)
-
-        mlb = MultiLabelBinarizer()
-        y_train = mlb.fit_transform(y_train.apply(lambda row: row.split(" ")))
-        y_test_encoder = mlb.transform(y_test.apply(lambda row: row.split(" ")))
-
-        with open(f"{dataset_folder}/classes.txt", "w") as file:
-            for genre in mlb.classes_:
-                file.write(f"{genre}\n")
-
-        train_feats = list(train_feats)
-        test_feats = list(test_feats)
-        y_train = list(y_train)
-        for i in range(len(train_feats) - 1, -1, -1):
-            if train_feats[i].shape[0] != 1000:
-                train_feats.pop(i)
-                y_train.pop(i)
-                train_feats.pop(i)
-
-        y_test_encoder = list(y_test_encoder)
-        for i in range(len(test_feats) - 1, -1, -1):
-            if test_feats[i].shape[0] != 1000:
-                test_feats.pop(i)
-                y_test_encoder.pop(i)
-                test_feats.pop(i)
-
-        train_feats = np.array(train_feats)
-        test_feats = np.array(test_feats)
-        y_train = np.array(y_train)
-        y_test_encoder = np.array(y_test_encoder)
-
-        num_samples, sequence_length, num_features = train_feats.shape
-        (self.sequence_length, self.input_dim, self.num_classes) = (
-            sequence_length,
-            num_features,
-            len(mlb.classes_),
-        )
-        X_train_flat = train_feats.reshape(num_samples, -1)
-        X_val_flat = test_feats.reshape(test_feats.shape[0], -1)
-
-        scaler = StandardScaler()
-        X_train_scaled_flat = scaler.fit_transform(X_train_flat)
-        X_val_scaled_flat = scaler.transform(X_val_flat)
-
-        X_train_scaled = X_train_scaled_flat.reshape(
-            num_samples, sequence_length, num_features
-        )
-        X_val_scaled = X_val_scaled_flat.reshape(
-            test_feats.shape[0], sequence_length, num_features
-        )
-
-        train_dataset = TensorDataset(
-            torch.tensor(X_train_scaled).float(), torch.tensor(y_train).float()
-        )
-        val_dataset = TensorDataset(
-            torch.tensor(X_val_scaled).float(), torch.tensor(y_test_encoder).float()
-        )
-
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size)
-
-        return train_loader, val_loader
-
-    def get_datasets_shape(self):
-        return self.sequence_length, self.input_dim, self.num_classes
-
-    def _preprocess_image(self, image):
-        """
-        Preprocess the image by cropping and converting to grayscale.
-        """
-        if not isinstance(image, np.ndarray):
-            image = np.array(image)
-
-        if len(image.shape) == 3:
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        height, width = image.shape
-        image_part = 7
-        crop_width = width // image_part
-        start_x = width // 2 - width // (image_part * 2)
-        end_x = start_x + crop_width
-        cropped_image = image[:, start_x:end_x]
-
-        return cropped_image
-
-    def _extract_cv_sift(self, image, nfeatures=1000):
-        """
-        Extract SIFT features from the image.
-        """
-        if image is None:
-            raise ValueError(f"Error loading empty image")
-
-        sift = cv2.SIFT_create(nfeatures=nfeatures)
-        kp, descriptors = sift.detectAndCompute(np.array(image, dtype=np.uint8), None)
-        if len(kp) > nfeatures:
-            descriptors = descriptors[:nfeatures]
-        return descriptors
-
-    def process_sample(self, sample, nfeatures=1000):
-        """
-        Process a single sample to extract features using SIFT.
-        """
-        img = self._preprocess_image(sample)
-        descriptors = self._extract_cv_sift(img, nfeatures=nfeatures)
-        return descriptors
-
-    def _build_features(self, df, nfeatures=1000):
-        """
-        Build features in parallel using multiprocessing.
-        """
-        if "image" not in df.columns:
-            raise ValueError("The DataFrame must contain an 'image' column.")
-
-        images = df["image"].tolist()
-        num_workers = min(cpu_count(), len(images))
-        with Pool(num_workers) as pool:
-            feats = list(
-                tqdm.tqdm(
-                    pool.imap(
-                        partial(self.process_sample, nfeatures=nfeatures), images
-                    ),
-                    total=len(images),
-                )
+    @staticmethod
+    async def _convert_entry_in_data(entry: dict[str, any]) -> MusicEntry:
+        try:
+            genres = entry["genres"]
+            image_path = entry["image_path"]
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=400, detail={"message": "Invalid JSON format."}
             )
+        # list_genres = genres.split(" ")
 
-        return feats
+        return MusicEntry(genres=genres, image_path=image_path)
+
+    async def convert_files_to_dataframe(
+        self, json_file: UploadFile = File(...), zip_file: UploadFile = File(...)
+    ) -> pd.DataFrame:
+        """
+        Важная ремарка. На данный момент мы не обращаем внимания на путь предоставленный в JSON.
+        Мы его заменяем на удобный нам формат, для сохранения.
+
+        Поступает на JSON в виде:
+        {"0", {"genres": "sldfjas ads;lfkj", "image_path": "path/0.png"}, ...}
+        Ключ должны совпадать с картинками в ZIP
+        """
+        logger.info("Get files")
+
+        json_content = json.loads(await json_file.read())
+        zip_content = zipfile.ZipFile(io.BytesIO(await zip_file.read()))
+
+        dataset_name = Path(json_file.filename).stem
+
+        specs_path = self._data_spec_repo.save_spectrograms(dataset_name, zip_content)
+        data = []
+
+        for key, value in json_content.items():
+            m_en = await self._convert_entry_in_data(value)
+            data.append({"genres": m_en.genres, "img": f"{specs_path}/{key}.png"})
+        df = pd.DataFrame(data)
+        self._data_spec_repo.save_spectorgrams_json(dataset_name, df)
+        return df
+
+    def get_datasets_names(self) -> DatasetNamesResponse:
+        return self._data_spec_repo.get_datasets_names()
+
+    async def fit_model(self, fit_request: FitRequest) -> FitResponse:
+        logger.info(
+            f"Starting model training for {fit_request.epochs} epochs with learning rate {fit_request.learning_rate}"
+        )
+
+        train_loader, val_loader = self._data_spec_repo.load_data(
+            fit_request.dataset_name
+        )
+        logger.info("Getting dataset shape")
+        model_inputs = self._data_spec_repo.get_datasets_shape()
+        logger.info("Fit model")
+        return await self._model_spec_repo.fit_model(
+            model_inputs, fit_request, train_loader, val_loader
+        )
+
+    def get_labels(self, name: DatasetNameRequest) -> LabelsResponse:
+        logger.info("Getting labels")
+        return self._data_spec_repo.get_labels(name)
+
+    async def get_models_names(self):
+        all_models = await self._model_spec_repo.load_model_metadata()
+        return ModelsNamesResponse(names=all_models.keys())
+
+    async def predict(self, model_name: str = Form(...), data: UploadFile = File(...)):
+        all_models = await self._model_spec_repo.load_model_metadata()
+        if model_name not in all_models:
+            raise HTTPException(status_code=404, detail="Model not found")
+        model = await self._model_spec_repo.load_model(all_models[model_name])
+        image_bytes = await data.read()
+
+        image_tensor = await self._data_spec_repo.preprocess_image(image_bytes)
+        predicted_genres = self.get_labels(
+            DatasetNameRequest(name=model.get_dataset_name())
+        )
+        logger.info("Predict model")
+        return await self._model_spec_repo.predict(
+            model, image_tensor, predicted_genres
+        )
+
+    async def save_model_name(self, model: ModelNameRequest):
+        all_models = await self._model_spec_repo.load_model_metadata()
+
+        if model.name in all_models:
+            raise HTTPException(
+                status_code=400, detail=f"Model name '{model.name}' already exists"
+            )
+        all_models[model.name] = model.id
+
+        await self._model_spec_repo.save_model_metadata(all_models)
+        return DatasetNameResponse(
+            message=f"Model '{model.name}' with ID {model.id} has been saved."
+        )

@@ -1,25 +1,22 @@
+import traceback
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
 import streamlit as st
-import traceback
-
 from loguru import logger
 from sklearn.metrics import confusion_matrix
 
 from music_predictor_backend.dto.MusicDTO import (
     DatasetNameRequest,
-    DatasetNameResponse,
+    DatasetNamesResponse,
     FitRequest,
     FitResponse,
     LabelsResponse,
-    DatasetNamesResponse,
     ModelNameRequest,
 )
-from music_predictor_streamlit.service.eda import EDA
 from music_predictor_streamlit.service.utils import (
-    pandas_to_fastapi_json,
     read_json_from_backend,
     send_post_request,
 )
@@ -40,15 +37,16 @@ class ModelTrainer:
         y_true_list: list[int], y_pred_list: list[int], label_classes: list[str]
     ):
         """Generate classification metrics"""
-        y_true = np.asarray(y_true_list)
-        y_pred = np.asarray(y_pred_list)
+
+        y_true = np.array(y_true_list)
+        y_pred = np.array(y_pred_list)
 
         metrics_table = []
         precision_list, recall_list, f1_list, accuracy_list = [], [], [], []
 
         for i in range(len(y_true_list)):
-            y_true_label = y_true_list
-            y_pred_label = y_pred_list
+            y_true_label = y_true[:, i]
+            y_pred_label = y_pred[:, i]
             tn, fp, fn, tp = confusion_matrix(
                 y_true_label, y_pred_label, labels=[0, 1]
             ).ravel()
@@ -120,7 +118,7 @@ class ModelTrainer:
             self.create_report_metrics(res.y_true, res.y_pred, labels)
             st.success("Модель создана!")
 
-            return res.model_id
+            return res.model_number_id
         except Exception as e:
             logger.error(e)
             logger.error(traceback.format_exc())
