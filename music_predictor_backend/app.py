@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from starlette.responses import RedirectResponse
 
 from music_predictor_backend.routes.v1.MusicRouter import musicRouter
+from music_predictor_backend.routes.v1.TextRouter import textRouter
 from music_predictor_backend.src.utils import setup_metrics_utils
 
 
@@ -15,6 +16,7 @@ async def app_lifespan(_: FastAPI):
 
 app = FastAPI(lifespan=app_lifespan)
 app.include_router(musicRouter)
+app.include_router(textRouter)
 
 
 @app.get("/")

@@ -1,16 +1,13 @@
+import pickle
+
 import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 import streamlit as st
 from loguru import logger
-import pickle
 from streamlit.runtime.uploaded_file_manager import UploadedFile
 
-from music_predictor_streamlit.dto.dto import DatasetNameRequest
-from music_predictor_streamlit.service.utils import (
-    pandas_to_fastapi_json,
-    send_post_request,
-)
+from music_predictor_streamlit.service.utils import pandas_to_fastapi_json
 from music_predictor_streamlit.settings.settings import config
 
 
@@ -28,8 +25,8 @@ class EDA:
         df = None
         try:
             df = pd.DataFrame(data)
-            logger.info(f"Successfully converted json to dataframe")
-        except ValueError as e:
+            logger.info("Successfully converted json to dataframe")
+        except ValueError:
             error = "Can't parse json data"
             st.error(error)
             logger.error(error)

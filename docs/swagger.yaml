@@ -1,5 +1,15 @@
 components:
   schemas:
+    Body_convert_files_to_dataframe_api_v1_text_upload_dataset_post:
+      properties:
+        csv_file:
+          format: binary
+          title: Csv File
+          type: string
+      required:
+      - csv_file
+      title: Body_convert_files_to_dataframe_api_v1_text_upload_dataset_post
+      type: object
     Body_convert_files_to_dataframe_api_v1_upload_dataset_post:
       properties:
         json_file:
@@ -335,6 +345,32 @@ paths:
       summary: Save Model Name
       tags:
       - Music
+  /api/v1/text/upload_dataset:
+    post:
+      operationId: convert_files_to_dataframe_api_v1_text_upload_dataset_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_convert_files_to_dataframe_api_v1_text_upload_dataset_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Convert Files To Dataframe
+      tags:
+      - Text
   /api/v1/upload_dataset:
     post:
       operationId: convert_files_to_dataframe_api_v1_upload_dataset_post
