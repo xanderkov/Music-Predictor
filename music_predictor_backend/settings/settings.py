@@ -10,6 +10,7 @@ from pydantic_settings import (
 
 class LoggerSettings(BaseSettings):
     loki_url: str = "http://localhost:3100/loki/api/v1/push"
+    use_loki: bool = False
 
 
 class MusicModelSettings(BaseSettings):

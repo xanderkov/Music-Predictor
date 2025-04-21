@@ -39,6 +39,16 @@ components:
       - data
       title: Body_predict_api_v1_predict_post
       type: object
+    Body_upload_model_api_v1_text_upload_model_post:
+      properties:
+        model:
+          format: binary
+          title: Model
+          type: string
+      required:
+      - model
+      title: Body_upload_model_api_v1_text_upload_model_post
+      type: object
     DatasetNameRequest:
       properties:
         name:
@@ -345,6 +355,34 @@ paths:
       summary: Save Model Name
       tags:
       - Music
+  /api/v1/text/predict:
+    post:
+      operationId: predict_api_v1_text_predict_post
+      parameters:
+      - in: query
+        name: text
+        required: true
+        schema:
+          title: Text
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictByModelResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Predict
+      tags:
+      - Text
   /api/v1/text/upload_dataset:
     post:
       operationId: convert_files_to_dataframe_api_v1_text_upload_dataset_post
@@ -369,6 +407,36 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Convert Files To Dataframe
+      tags:
+      - Text
+  /api/v1/text/upload_model:
+    post:
+      operationId: upload_model_api_v1_text_upload_model_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_model_api_v1_text_upload_model_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                title: Response Upload Model Api V1 Text Upload Model Post
+                type: object
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Upload Model
       tags:
       - Text
   /api/v1/upload_dataset:
