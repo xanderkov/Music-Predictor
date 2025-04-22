@@ -39,6 +39,19 @@ components:
       - data
       title: Body_predict_api_v1_predict_post
       type: object
+    Body_predict_api_v1_text_get_text_post:
+      properties:
+        music_file:
+          description: "MP3 \u0430\u0443\u0434\u0438\u043E\u0444\u0430\u0439\u043B\
+            \ \u0434\u043B\u044F \u0440\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0432\
+            \u0430\u043D\u0438\u044F"
+          format: binary
+          title: Music File
+          type: string
+      required:
+      - music_file
+      title: Body_predict_api_v1_text_get_text_post
+      type: object
     Body_upload_model_api_v1_text_upload_model_post:
       properties:
         model:
@@ -180,6 +193,23 @@ components:
       required:
       - genres
       title: PredictByModelResponse
+      type: object
+    TextFromMP3:
+      properties:
+        language:
+          title: Language
+          type: string
+        status:
+          title: Status
+          type: string
+        text:
+          title: Text
+          type: string
+      required:
+      - text
+      - language
+      - status
+      title: TextFromMP3
       type: object
     ValidationError:
       properties:
@@ -355,6 +385,33 @@ paths:
       summary: Save Model Name
       tags:
       - Music
+  /api/v1/text/get_text:
+    post:
+      operationId: predict_api_v1_text_get_text_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_predict_api_v1_text_get_text_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TextFromMP3'
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Predict
+      tags:
+      - Text
   /api/v1/text/predict:
     post:
       operationId: predict_api_v1_text_predict_post

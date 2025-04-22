@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 
 from music_predictor_backend.dto.MusicDTO import PredictByModelResponse
+from music_predictor_backend.dto.TextDTO import TextFromMP3
 from music_predictor_backend.services.TextService import TextService
 
 textRouter = APIRouter(
@@ -16,6 +17,14 @@ async def convert_files_to_dataframe(
     text_service: TextService = Depends(),
 ):
     return text_service.upload_dataset(csv_file)
+
+
+@textRouter.post("/get_text")
+async def get_text(
+    music_file: UploadFile = File(..., description="MP3 аудиофайл для распознавания"),
+    text_service: TextService = Depends(),
+) -> TextFromMP3:
+    return await text_service.get_text(music_file)
 
 
 @textRouter.post("/predict")
