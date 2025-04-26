@@ -6,21 +6,27 @@ from loguru import logger
 
 from music_predictor_backend.dto.MusicDTO import PredictByModelResponse
 from music_predictor_backend.dto.TextDTO import TextFromMP3
+from music_predictor_backend.repository.TextRepo import TextRepo
 from music_predictor_backend.repository.WhisperRepo import WhisperRepo
 from music_predictor_backend.settings.settings import config
 
 
 class TextService:
-    def __init__(self, whisper_repo: WhisperRepo = Depends()):
+    def __init__(
+        self, whisper_repo: WhisperRepo = Depends(), text_repo: TextRepo = Depends()
+    ):
         self._config = config
         self._whisper_repo = whisper_repo
+        self._text_repo = text_repo
 
     def upload_dataset(self, csv_file: UploadFile):
         raise NotImplementedError
 
     async def predict(self, text: str):
         logger.info(f"Text: {text}")
-        return PredictByModelResponse(genres=[])
+        genres = self._text_repo.predict(text)
+        logger.info(f"Genres: {genres}")
+        return PredictByModelResponse(genres=genres)
 
     async def upload_model(self, model: UploadFile) -> dict[str, str]:
         logger.info(f"Text: {await model.read()}")
