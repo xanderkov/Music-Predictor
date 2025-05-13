@@ -27,15 +27,15 @@ class SpectrogramCNN(nn.Module):
         self.conv_layers = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(32), nn.ReLU(),
             nn.Conv2d(32, 32, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(32), nn.ReLU(),
-            nn.MaxPool2d(3, 3), nn.Dropout(0.4),
+            nn.MaxPool2d(3, 3), nn.Dropout(0.5),
 
             nn.Conv2d(32, 64, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(64), nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(64), nn.ReLU(),
-            nn.MaxPool2d(3, 3), nn.Dropout(0.4),
+            nn.MaxPool2d(3, 3), nn.Dropout(0.5),
 
             nn.Conv2d(64, 128, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(128), nn.ReLU(),
             nn.Conv2d(128, 128, kernel_size=3, padding=1, bias=False), nn.BatchNorm2d(128), nn.ReLU(),
-            nn.MaxPool2d(3, 3), nn.Dropout(0.4),
+            nn.MaxPool2d(3, 3), nn.Dropout(0.5),
         )
         self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Sequential(
@@ -75,9 +75,9 @@ def train_model(model, train_loader, val_loader, y_train, num_epochs=50, lr=0.00
     """
     model.to(device)
     class_weights = calculate_class_weights(torch.tensor(y_train).to(device))
-#     criterion = nn.BCEWithLogitsLoss(pos_weight=class_weights)
-    criterion = AsymmetricFocalLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=w_d)
+    criterion = nn.BCEWithLogitsLoss(pos_weight=class_weights)
+    # criterion = AsymmetricFocalLoss()
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=w_d)
 
     train_losses, val_losses = [], []
     train_accuracies, val_accuracies = [], []
@@ -117,7 +117,7 @@ def train_model(model, train_loader, val_loader, y_train, num_epochs=50, lr=0.00
         val_losses.append(val_loss / len(val_loader))
         val_accuracies.append(val_correct / val_total)
         
-        if epoch and epoch % 5 == 0:
+        if epoch and (epoch % 10 == 0 or epoch < 10):
             clear_output(wait=True)
             plt.figure(figsize=(16, 5))
             plt.subplot(1, 2, 1)

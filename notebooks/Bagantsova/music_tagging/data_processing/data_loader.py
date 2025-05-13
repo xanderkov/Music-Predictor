@@ -106,8 +106,8 @@ class SpectrogramDataset(Dataset):
                                   saturation=(0, 1.0), 
                                   hue=(0, 0.5),
                                                           )
-                                   ], p=0.5),  # Brightness variation
-            transforms.RandomErasing(scale=(0.02, 0.1), ratio=(0.3, 3.3), p=0.5),  # Random masking
+                                   ], p=0.8),  # Brightness variation
+            transforms.RandomErasing(scale=(0.02, 0.5), p=0.8),  # Random masking
             transforms.Lambda(SpectrogramDataset.add_gaussian_noise),  # Use a static method instead of lambda
             transforms.Lambda(SpectrogramDataset.normalize),
         ])
@@ -215,7 +215,7 @@ def process_audio_to_melspectrogram(audio_file, n_fft=N_FFT, hop_length=HOP_LENG
         data, sr = sf.read(audio_file, dtype=np.int16)
     except Exception as e:
         print(f"Error reading {audio_file}: {e}")
-        return None, label
+        return []
 
     if len(data.shape) > 1:
         data = data[:, 0]  # Convert stereo to mono
