@@ -1,8 +1,7 @@
-from aiogram import Bot, Dispatcher
+from aiogram import Dispatcher
 
-from telegram_bot.bot.config_reader import config
+from telegram_bot.bot.router import router
 
-bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher()
 
-dp.include_router(dp)
+dp.include_router(router)

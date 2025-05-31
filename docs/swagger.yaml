@@ -52,6 +52,16 @@ components:
       - data
       title: Body_predict_api_v1_predict_post
       type: object
+    Body_predict_by_music_file_api_v1_predict_mp3_post:
+      properties:
+        music_file:
+          format: binary
+          title: Music File
+          type: string
+      required:
+      - music_file
+      title: Body_predict_by_music_file_api_v1_predict_mp3_post
+      type: object
     Body_upload_model_api_v1_text_upload_model_post:
       properties:
         model:
@@ -138,6 +148,17 @@ components:
       - training_loss_history
       - model_number_id
       title: FitResponse
+      type: object
+    GenresResponse:
+      properties:
+        genres:
+          items:
+            type: string
+          title: Genres
+          type: array
+      required:
+      - genres
+      title: GenresResponse
       type: object
     HTTPValidationError:
       properties:
@@ -356,6 +377,33 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Predict
+      tags:
+      - Music
+  /api/v1/predict_mp3:
+    post:
+      operationId: predict_by_music_file_api_v1_predict_mp3_post
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_predict_by_music_file_api_v1_predict_mp3_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenresResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Predict By Music File
       tags:
       - Music
   /api/v1/save_model_name:

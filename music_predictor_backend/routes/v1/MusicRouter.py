@@ -8,6 +8,7 @@ from music_predictor_backend.dto.MusicDTO import (
     DatasetNamesResponse,
     FitRequest,
     FitResponse,
+    GenresResponse,
     LabelsResponse,
     ModelNameRequest,
     ModelsNamesResponse,
@@ -79,7 +80,7 @@ async def predict(
 async def predict_by_music_file(
     music_file: UploadFile = File(...),
     music_service: MusicService = Depends(),
-) -> PredictByModelResponse:
+) -> GenresResponse:
     return await music_service.predict_by_music_file(music_file)
 
 

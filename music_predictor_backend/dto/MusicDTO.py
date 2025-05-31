@@ -1,4 +1,3 @@
-from fastapi import Request, UploadFile
 from pydantic import BaseModel
 
 
@@ -61,3 +60,7 @@ class ModelInputs(BaseModel):
     sequence_length: int
     input_dim: int
     num_classes: int
+
+
+class GenresResponse(BaseModel):
+    genres: list[str]

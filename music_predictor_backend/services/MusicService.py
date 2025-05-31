@@ -13,6 +13,7 @@ from music_predictor_backend.dto.MusicDTO import (
     DatasetNamesResponse,
     FitRequest,
     FitResponse,
+    GenresResponse,
     LabelsResponse,
     ModelNameRequest,
     ModelsNamesResponse,
@@ -129,5 +130,7 @@ class MusicService:
             message=f"Model '{model.name}' with ID {model.id} has been saved."
         )
 
-    async def predict_by_music_file(self, music_file: UploadFile = File(...)):
-        pass
+    async def predict_by_music_file(
+        self, music_file: UploadFile = File(...)
+    ) -> GenresResponse:
+        return GenresResponse(genres=["Эмо рок"])
