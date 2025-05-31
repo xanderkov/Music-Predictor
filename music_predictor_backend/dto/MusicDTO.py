@@ -64,3 +64,13 @@ class ModelInputs(BaseModel):
 
 class GenresResponse(BaseModel):
     genres: list[str]
+
+
+class GenreModel(BaseModel):
+    genre: str
+    count: int
+    songs: list[str]
+
+
+class TopGenresResponse(BaseModel):
+    top_genres: list[GenreModel]

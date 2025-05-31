@@ -1,9 +1,11 @@
 import os
+import traceback
+import urllib.parse
 
 import aiohttp
 from aiogram import Bot, F, Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import KeyboardButton, Message, ReplyKeyboardMarkup
 from loguru import logger
 
 from telegram_bot.bot.config_reader import config
@@ -53,9 +55,50 @@ async def handle_audio(message: Message, bot: Bot):
                     if resp.status == 200:
                         result = await resp.json()
                         logger.info(f"Жанры: {result}")
-                        await message.reply(f"Жанры: {result['genres']}")
+                        genres = "\n".join(map(str, result["genres"]))
+                        await message.reply(f"Жанры:\n{genres}")
             except Exception as e:
                 await message.reply(f"Жанры не определились: {e}")
+
+
+@router.message(Command("clear_cache"))
+async def clear_cache(message: Message):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(f"{config.backend_url}/api/v1/clear_cache") as resp:
+                if resp.status == 200:
+                    result = await resp.json()
+                    logger.info(f"Ответ {result}")
+                    await message.reply("Кэш очищен.")
+        except Exception as e:
+            await message.reply(f"Чета не то: {e}")
+
+
+@router.message(Command("top_genres"))
+async def top_genres(message: Message):
+    logger.info("Get top genres")
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(f"{config.backend_url}/api/v1/top_genres") as resp:
+                if resp.status == 200:
+                    result = await resp.json()
+                    logger.info(f"Ответ {result}")
+                    if not result["top_genres"]:
+                        await message.reply("Нет данных о жанрах.")
+                        return
+                    top_genres_text = ""
+                    for genre in result["top_genres"]:
+                        top_genres_text += f"*Жанр:* {genre['genre']}\n"
+                        top_genres_text += f"*Количество песен:* {genre['count']}\n"
+                        top_genres_text += "*Примеры песен:\n"
+                        for song in genre["songs"]:
+                            song_name = urllib.parse.unquote(song)
+                            top_genres_text += f"  - {song_name}\n"
+                        top_genres_text += "\n"
+                    await message.reply(top_genres_text)
+        except Exception as e:
+            logger.error(traceback.format_exc())
+            await message.reply(f"Чета не то: {e}")
 
 
 @router.message(F.animation)
@@ -66,3 +109,25 @@ async def message_with_gif(message: Message):
 @router.message(F.sticker)
 async def message_with_sticker(message: Message):
     await message.answer("Это кринж!")
+
+
+@router.message(Command("help"))
+async def help(message: Message):
+    logger.info("Help command")
+    help_text = "Доступные команды:\n"
+    help_text += "/start - Начать работу с ботом\n"
+    help_text += "/help - Показать эту справку\n"
+    help_text += "/clear_cache - Очистить кэш бота\n"
+    help_text += "/top_genres - Показать топ жанров\n"
+    help_text += "Загрузка mp3 файла - Определить жанр музыки\n"
+
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="/start"), KeyboardButton(text="/help")],
+            [KeyboardButton(text="/clear_cache"), KeyboardButton(text="/top_genres")],
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=False,
+    )
+
+    await message.answer(help_text, reply_markup=keyboard)

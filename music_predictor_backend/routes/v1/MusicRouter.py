@@ -13,6 +13,7 @@ from music_predictor_backend.dto.MusicDTO import (
     ModelNameRequest,
     ModelsNamesResponse,
     PredictByModelResponse,
+    TopGenresResponse,
 )
 from music_predictor_backend.services.MusicService import MusicService
 
@@ -89,6 +90,17 @@ async def save_model_name(
     model: ModelNameRequest, music_service: MusicService = Depends()
 ) -> DatasetNameResponse:
     return await music_service.save_model_name(model)
+
+
+@musicRouter.get("/top_genres")
+async def top_genres(music_service: MusicService = Depends()) -> TopGenresResponse:
+    return await music_service.top_genres()
+
+
+@musicRouter.post("/clear_cache")
+def clear_cache(music_service: MusicService = Depends()):
+    music_service.clear_cache()
+    return {"status": "cleared"}
 
 
 # @musicRouter.post("/set_dataset_name")

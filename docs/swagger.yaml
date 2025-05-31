@@ -149,6 +149,25 @@ components:
       - model_number_id
       title: FitResponse
       type: object
+    GenreModel:
+      properties:
+        count:
+          title: Count
+          type: integer
+        genre:
+          title: Genre
+          type: string
+        songs:
+          items:
+            type: string
+          title: Songs
+          type: array
+      required:
+      - genre
+      - count
+      - songs
+      title: GenreModel
+      type: object
     GenresResponse:
       properties:
         genres:
@@ -232,6 +251,17 @@ components:
       - status
       title: TextFromMP3
       type: object
+    TopGenresResponse:
+      properties:
+        top_genres:
+          items:
+            $ref: '#/components/schemas/GenreModel'
+          title: Top Genres
+          type: array
+      required:
+      - top_genres
+      title: TopGenresResponse
+      type: object
     ValidationError:
       properties:
         loc:
@@ -268,6 +298,20 @@ paths:
               schema: {}
           description: Successful Response
       summary: Docs Redirect
+  /api/v1/clear_cache:
+    post:
+      operationId: clear_cache_api_v1_clear_cache_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '404':
+          description: Not found
+      summary: Clear Cache
+      tags:
+      - Music
   /api/v1/fit_model:
     post:
       operationId: fit_model_api_v1_fit_model_post
@@ -544,6 +588,21 @@ paths:
       summary: Upload Model
       tags:
       - Text
+  /api/v1/top_genres:
+    get:
+      operationId: top_genres_api_v1_top_genres_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopGenresResponse'
+          description: Successful Response
+        '404':
+          description: Not found
+      summary: Top Genres
+      tags:
+      - Music
   /api/v1/upload_dataset:
     post:
       operationId: convert_files_to_dataframe_api_v1_upload_dataset_post
