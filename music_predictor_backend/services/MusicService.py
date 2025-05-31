@@ -128,3 +128,6 @@ class MusicService:
         return DatasetNameResponse(
             message=f"Model '{model.name}' with ID {model.id} has been saved."
         )
+
+    async def predict_by_music_file(self, music_file: UploadFile = File(...)):
+        pass

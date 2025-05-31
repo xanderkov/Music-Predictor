@@ -75,6 +75,14 @@ async def predict(
     return await music_service.predict(model_name, data)
 
 
+@musicRouter.post("/predict_mp3")
+async def predict_by_music_file(
+    music_file: UploadFile = File(...),
+    music_service: MusicService = Depends(),
+) -> PredictByModelResponse:
+    return await music_service.predict_by_music_file(music_file)
+
+
 @musicRouter.post("/save_model_name")
 async def save_model_name(
     model: ModelNameRequest, music_service: MusicService = Depends()
