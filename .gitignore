@@ -166,3 +166,6 @@ data
 *.pth
 *.jpg
 volumes/
+.DS_store
+backend_data/*
+
