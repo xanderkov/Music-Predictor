@@ -5,13 +5,14 @@ from music_predictor_backend.settings.settings import config
 
 
 def setup_loki():
-    logger.add(
-        sink=loki_handler(
-            config.logger.loki_url,
-            {"application": "MusicBackend", "environment": "Develop"},
-        ),
-        serialize=True,
-    )
+    if config.logger.use_loki:
+        logger.add(
+            sink=loki_handler(
+                config.logger.loki_url,
+                {"application": "MusicBackend", "environment": "Develop"},
+            ),
+            serialize=True,
+        )
 
 
 def setup_metrics_utils():

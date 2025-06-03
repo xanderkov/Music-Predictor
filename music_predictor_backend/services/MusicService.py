@@ -1,6 +1,8 @@
 import io
 import json
+import random
 import zipfile
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -13,11 +15,15 @@ from music_predictor_backend.dto.MusicDTO import (
     DatasetNamesResponse,
     FitRequest,
     FitResponse,
+    GenreModel,
+    GenresResponse,
     LabelsResponse,
     ModelNameRequest,
     ModelsNamesResponse,
     MusicEntry,
+    TopGenresResponse,
 )
+from music_predictor_backend.repository.GenresCache import song_genre_cache
 from music_predictor_backend.repository.ModelSpectogramRepo import ModelSpecRepo
 from music_predictor_backend.repository.SpectogramRepo import SpecRepo
 
@@ -31,6 +37,7 @@ class MusicService:
 
         self._model_spec_repo = model_spec_repo
         self._data_spec_repo = data_spec_repo
+        self._song_genre_cache = song_genre_cache
 
     @staticmethod
     async def _convert_entry_in_data(entry: dict[str, any]) -> MusicEntry:
@@ -128,3 +135,45 @@ class MusicService:
         return DatasetNameResponse(
             message=f"Model '{model.name}' with ID {model.id} has been saved."
         )
+
+    async def predict_by_music_file(
+        self, music_file: UploadFile = File(...)
+    ) -> GenresResponse:
+        genres_list = [
+            "Эмо рок",
+            "Шансон",
+            "Рэп",
+            "Поп",
+            "Рок",
+            "Джаз",
+            "Классика",
+            "Фолк",
+            "Электроника",
+        ]
+        num_genres = random.randint(1, 3)
+        genres = random.sample(genres_list, num_genres)
+        self._song_genre_cache[music_file.filename] = genres
+        return GenresResponse(genres=genres)
+
+    async def top_genres(self) -> TopGenresResponse:
+        genre_counter = Counter()
+        genre_to_songs = defaultdict(list)
+
+        for song, genres in self._song_genre_cache.items():
+            for genre in genres:
+                genre_counter[genre] += 1
+                genre_to_songs[genre].append(song)
+
+        sorted_genres = genre_counter.most_common()
+        result = []
+
+        for genre, count in sorted_genres:
+            songs = list(set(genre_to_songs[genre]))
+            genre_model = GenreModel(genre=genre, count=count, songs=songs)
+            result.append(genre_model)
+
+        response = TopGenresResponse(top_genres=result)
+        return response
+
+    def clear_cache(self):
+        self._song_genre_cache.clear()
