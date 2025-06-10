@@ -1,13 +1,16 @@
 import io
 import json
-import random
 import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
+import torch
 
+import numpy as np
 import pandas as pd
 from fastapi import Depends, File, Form, HTTPException, UploadFile
 from loguru import logger
+import torchvision.transforms as transforms
+from torchvision.transforms import InterpolationMode
 
 from music_predictor_backend.dto.MusicDTO import (
     DatasetNameRequest,
@@ -26,6 +29,12 @@ from music_predictor_backend.dto.MusicDTO import (
 from music_predictor_backend.repository.GenresCache import song_genre_cache
 from music_predictor_backend.repository.ModelSpectogramRepo import ModelSpecRepo
 from music_predictor_backend.repository.SpectogramRepo import SpecRepo
+from music_predictor_backend.services.src.model import SpectrogramAttentionCNN
+from music_predictor_backend.services.src.dataset import (
+    process_audio_to_melspectrogram,
+    convert_mp3_to_wav,
+    SpectrogramDataset,
+)
 
 
 class MusicService:
@@ -34,6 +43,33 @@ class MusicService:
         model_spec_repo: ModelSpecRepo = Depends(),
         data_spec_repo: SpecRepo = Depends(),
     ):
+        self.genres_list = [
+            "classical",
+            "country",
+            "jazz",
+            "pop",
+            "rap",
+            "rock",
+            "world",
+        ]
+        self.model = SpectrogramAttentionCNN(
+            num_classes=len(self.genres_list), use_attention=True
+        )
+        self.model.load_state_dict(
+            torch.load(
+                "data/model/attnTrue_lossbce.pth", map_location=torch.device("cpu")
+            )
+        )
+        self.model.eval()
+
+        self.transformer = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.ConvertImageDtype(dtype=torch.float32),
+                transforms.Resize(128, interpolation=InterpolationMode.BILINEAR),
+                transforms.Lambda(SpectrogramDataset.normalize),
+            ]
+        )
 
         self._model_spec_repo = model_spec_repo
         self._data_spec_repo = data_spec_repo
@@ -139,21 +175,33 @@ class MusicService:
     async def predict_by_music_file(
         self, music_file: UploadFile = File(...)
     ) -> GenresResponse:
-        genres_list = [
-            "Эмо рок",
-            "Шансон",
-            "Рэп",
-            "Поп",
-            "Рок",
-            "Джаз",
-            "Классика",
-            "Фолк",
-            "Электроника",
+        mp3_path = f"/tmp/{music_file.filename}"
+        with open(mp3_path, "wb") as f:
+            f.write(await music_file.read())
+
+        wav_path = mp3_path.replace(".mp3", ".wav")
+        convert_mp3_to_wav(mp3_path, wav_path)
+
+        spectrograms = process_audio_to_melspectrogram(wav_path)
+
+        if not spectrograms:
+            return GenresResponse(genres=[])
+
+        predictions = []
+        for mel_spec in spectrograms:
+            image_tensor = self.transformer(mel_spec).unsqueeze(0)
+            with torch.no_grad():
+                output = torch.sigmoid(self.model(image_tensor))
+                preds = (output > 0.5).int().squeeze().tolist()
+                predictions.append(preds)
+
+        mean_preds = np.mean(predictions, axis=0)
+        final_preds = (mean_preds > 0.5).astype(int)
+        predicted_genres = [
+            genre for i, genre in enumerate(self.genres_list) if final_preds[i]
         ]
-        num_genres = random.randint(1, 3)
-        genres = random.sample(genres_list, num_genres)
-        self._song_genre_cache[music_file.filename] = genres
-        return GenresResponse(genres=genres)
+        self._song_genre_cache[music_file.filename] = predicted_genres
+        return GenresResponse(genres=predicted_genres)
 
     async def top_genres(self) -> TopGenresResponse:
         genre_counter = Counter()
